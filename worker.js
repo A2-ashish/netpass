@@ -1333,7 +1333,8 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
             keys = [apiKey.trim()];
         }
         
-        let maxAttempts = keys.length > 0 ? keys.length : 1;
+        // Loop the entire rotation twice to give temporary unavailable keys a 2nd attempt
+        let maxAttempts = keys.length > 0 ? keys.length * 2 : 1;
         
         const data = await new Promise(resolve => chrome.storage.local.get(['apiKeyIndex'], resolve));
         let startIndex = data.apiKeyIndex || 0;
