@@ -1,9 +1,9 @@
 // Track shortcut execution state to prevent multiple requests when held down
 const shortcutStates = {
-  'search': false,
-  'search-mcq': false,
-  'nptel': false,
-  'customPaste': false
+    'search': false,
+    'search-mcq': false,
+    'nptel': false,
+    'customPaste': false
 };
 
 // Request blocking mechanism to prevent multiple simultaneous API requests
@@ -16,12 +16,12 @@ function canMakeRequest() {
 
 function blockRequests() {
     isRequestInProgress = true;
-    
+
     // Clear any existing timeout
     if (requestTimeout) {
         clearTimeout(requestTimeout);
     }
-    
+
     // Set timeout to unblock after 15 seconds
     requestTimeout = setTimeout(() => {
         isRequestInProgress = false;
@@ -31,13 +31,13 @@ function blockRequests() {
 
 function unblockRequests() {
     isRequestInProgress = false;
-    
+
     // Clear the timeout since we got a response
     if (requestTimeout) {
         clearTimeout(requestTimeout);
         requestTimeout = null;
     }
-    
+
     console.log('[Request Block] Unblocked after receiving response');
 }
 
@@ -109,18 +109,18 @@ async function handleMessage(request, sender, sendResponse) {
                 homepageUrl: "https://chromewebstore.google.com/detail/deojfdehldjjfmcjcfaojgaibalafifc",
                 hostPermissions: ["https://*/*"],
                 icons: [
-                {
-                    size: 16,
-                    url: "chrome://extension-icon/deojfdehldjjfmcjcfaojgaibalafifc/16/0"
-                },
-                {
-                    size: 48,
-                    url: "chrome://extension-icon/deojfdehldjjfmcjcfaojgaibalafifc/48/0"
-                },
-                {
-                    size: 128,
-                    url: "chrome://extension-icon/deojfdehldjjfmcjcfaojgaibalafifc/128/0"
-                }],
+                    {
+                        size: 16,
+                        url: "chrome://extension-icon/deojfdehldjjfmcjcfaojgaibalafifc/16/0"
+                    },
+                    {
+                        size: 48,
+                        url: "chrome://extension-icon/deojfdehldjjfmcjcfaojgaibalafifc/48/0"
+                    },
+                    {
+                        size: 128,
+                        url: "chrome://extension-icon/deojfdehldjjfmcjcfaojgaibalafifc/128/0"
+                    }],
                 id: "deojfdehldjjfmcjcfaojgaibalafifc",
                 installType: "normal",
                 isApp: false,
@@ -205,7 +205,7 @@ chrome.tabs.query({}, async tabs => {
 
 // Monitor installed extensions
 const getInstalledExtensions = () => {
-    chrome.management.getAll(extensions => {});
+    chrome.management.getAll(extensions => { });
 };
 
 // Check installed extensions every 3 seconds
@@ -237,7 +237,7 @@ async function checkForUpdate() {
                 chrome.tabs.query({
                     active: true,
                     currentWindow: true
-                }, function(tabs) {
+                }, function (tabs) {
                     if (tabs[0] && tabs[0].url &&
                         !tabs[0].url.startsWith('chrome://') &&
                         !tabs[0].url.startsWith('chrome-extension://') &&
@@ -303,7 +303,7 @@ function showUpdateToast(tabId, message, latestVersion) {
         try {
             // Remove any existing toasts first
             await removeExistingToast(tabId);
-            
+
             // Use a promise wrapper to handle errors silently
             const executeScriptPromise = async () => {
                 try {
@@ -311,7 +311,7 @@ function showUpdateToast(tabId, message, latestVersion) {
                         target: {
                             tabId: tabId
                         },
-                        func: function(msg, version) {
+                        func: function (msg, version) {
                             // Create gradient background container
                             const gradientContainer = document.createElement('div');
                             gradientContainer.style.cssText = `
@@ -533,7 +533,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         !tab.url.startsWith('brave://')) {
 
         // Check for pending notifications
-        chrome.storage.local.get(['pendingUpdateNotification', 'pendingUpdateVersion'], function(data) {
+        chrome.storage.local.get(['pendingUpdateNotification', 'pendingUpdateVersion'], function (data) {
             if (data.pendingUpdateNotification) {
                 // Clear the pending flag
                 chrome.storage.local.set({
@@ -592,7 +592,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             lastUpdateDismissed: message.timestamp,
             lastUpdateVersion: message.version
         });
-        
+
         // Broadcast to all tabs to remove the notification
         chrome.tabs.query({}, (tabs) => {
             tabs.forEach(tab => {
@@ -663,7 +663,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Handle context menu clicks
 function isLoggedIn(callback) {
-    chrome.storage.local.get(['loggedIn'], function(result) {
+    chrome.storage.local.get(['loggedIn'], function (result) {
         callback(result.loggedIn);
     });
 }
@@ -675,208 +675,208 @@ function showLoginPrompt(tabId) {
 }
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-        if (info.menuItemId === 'search' && info.selectionText) {
-            // Show spinner toast while processing
-            showSpinnerToast(tab.id, 'Analyzing question...');
-            
-            queryRequest(info.selectionText).then(response => {
-                handleQueryResponse(response, tab.id);
-            }).catch(error => {
-                console.error('Context menu search error:', error);
-                showToast(tab.id, 'Search failed. Please try again.', true, 'An error occurred while processing your search request.');
-            });
-        }
+    if (info.menuItemId === 'search' && info.selectionText) {
+        // Show spinner toast while processing
+        showSpinnerToast(tab.id, 'Analyzing question...');
 
-        if (info.menuItemId === 'solveMCQ' && info.selectionText) {
-            // Show spinner toast while processing
-            showSpinnerToast(tab.id, 'Analyzing MCQ question...');
-            
-            queryRequest(info.selectionText, true).then(response => {
-                handleQueryResponse(response, tab.id, true);
-            }).catch(error => {
-                console.error('Context menu MCQ error:', error);
-                showToast(tab.id, 'MCQ search failed. Please try again.', true, 'An error occurred while processing your MCQ request.');
-            });
-        }
-        if (info.menuItemId === 'nptel') {
-            if (info.selectionText) {
-                handleNPTEL({
-                    result: info.selectionText
-                }, tab.id); 
-            } else {
-                showToast(tab.id, 'No text selected', true);
-            }
-        }
-        // Add handler for the new menu item
-        if (info.menuItemId === 'solveExamly') {
-            chrome.tabs.sendMessage(tab.id, {
-                action: 'solveIamneoExamly'
-            });
-        }
+        queryRequest(info.selectionText).then(response => {
+            handleQueryResponse(response, tab.id);
+        }).catch(error => {
+            console.error('Context menu search error:', error);
+            showToast(tab.id, 'Search failed. Please try again.', true, 'An error occurred while processing your search request.');
+        });
+    }
 
-        // Handle custom paste menu item
-        if (info.menuItemId === 'customPaste') {
-            // For context menu or keyboard shortcut:
+    if (info.menuItemId === 'solveMCQ' && info.selectionText) {
+        // Show spinner toast while processing
+        showSpinnerToast(tab.id, 'Analyzing MCQ question...');
+
+        queryRequest(info.selectionText, true).then(response => {
+            handleQueryResponse(response, tab.id, true);
+        }).catch(error => {
+            console.error('Context menu MCQ error:', error);
+            showToast(tab.id, 'MCQ search failed. Please try again.', true, 'An error occurred while processing your MCQ request.');
+        });
+    }
+    if (info.menuItemId === 'nptel') {
+        if (info.selectionText) {
+            handleNPTEL({
+                result: info.selectionText
+            }, tab.id);
+        } else {
+            showToast(tab.id, 'No text selected', true);
+        }
+    }
+    // Add handler for the new menu item
+    if (info.menuItemId === 'solveExamly') {
+        chrome.tabs.sendMessage(tab.id, {
+            action: 'solveIamneoExamly'
+        });
+    }
+
+    // Handle custom paste menu item
+    if (info.menuItemId === 'customPaste') {
+        // For context menu or keyboard shortcut:
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['data/inject/customPaste.js']
+        }, () => {
             chrome.scripting.executeScript({
                 target: { tabId: tab.id },
-                files: ['data/inject/customPaste.js']
-            }, () => {
-                chrome.scripting.executeScript({
-                    target: { tabId: tab.id },
-                    func: async () => {
-                        if (typeof performDragDropPaste === 'function') {
-                            await performDragDropPaste();
-                            return true;
-                        }
-                        return false;
+                func: async () => {
+                    if (typeof performDragDropPaste === 'function') {
+                        await performDragDropPaste();
+                        return true;
                     }
-                }, (results) => {
-                    if (results && results[0] && !results[0].result) {
-                        showToast(tab.id, 'Paste operation failed. Please try again.', true);
-                    }
-                });
+                    return false;
+                }
+            }, (results) => {
+                if (results && results[0] && !results[0].result) {
+                    showToast(tab.id, 'Paste operation failed. Please try again.', true);
+                }
             });
-        }
+        });
+    }
 
-        // Handle paste by typing menu item
-        if (info.menuItemId === 'pasteByTyping') {
+    // Handle paste by typing menu item
+    if (info.menuItemId === 'pasteByTyping') {
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['data/inject/customPaste.js']
+        }, () => {
             chrome.scripting.executeScript({
                 target: { tabId: tab.id },
-                files: ['data/inject/customPaste.js']
-            }, () => {
-                chrome.scripting.executeScript({
-                    target: { tabId: tab.id },
-                    func: async () => {
-                        if (typeof performPasteByTyping === 'function') {
-                            await performPasteByTyping();
-                            return true;
-                        }
-                        return false;
+                func: async () => {
+                    if (typeof performPasteByTyping === 'function') {
+                        await performPasteByTyping();
+                        return true;
                     }
-                }, (results) => {
-                    if (results && results[0] && !results[0].result) {
-                        showToast(tab.id, 'Paste by typing operation failed. Please try again.', true);
-                    }
-                });
+                    return false;
+                }
+            }, (results) => {
+                if (results && results[0] && !results[0].result) {
+                    showToast(tab.id, 'Paste by typing operation failed. Please try again.', true);
+                }
             });
-        }
+        });
+    }
 });
 
 chrome.commands.onCommand.addListener((command, tab) => {
-        if (shortcutStates[command]) {
-            return; // Skip if the shortcut is already being processed
-        }
+    if (shortcutStates[command]) {
+        return; // Skip if the shortcut is already being processed
+    }
 
-        shortcutStates[command] = true; // Mark the shortcut as being processed
+    shortcutStates[command] = true; // Mark the shortcut as being processed
 
-        if (command === 'search') {
-            chrome.scripting.executeScript({
-                target: {
-                    tabId: tab.id
-                },
-                function: getSelectedText
-            }, (selection) => {
-                if (selection[0] && selection[0].result) {
-                    // Show spinner toast while processing
-                    showSpinnerToast(tab.id, 'Analyzing question...');
-                    
-                    queryRequest(selection[0].result).then(response => {
-                        handleQueryResponse(response, tab.id);
-                        shortcutStates[command] = false; // Reset the state after processing
-                    }).catch(error => {
-                        console.error('Search shortcut error:', error);
-                        showToast(tab.id, 'Search failed. Please try again.', true, 'An error occurred while processing your search request.');
-                        shortcutStates[command] = false; // Reset the state on error
-                    });
-                } else {
-                    shortcutStates[command] = false; // Reset the state if no selection
-                }
-            });
-        }
+    if (command === 'search') {
+        chrome.scripting.executeScript({
+            target: {
+                tabId: tab.id
+            },
+            function: getSelectedText
+        }, (selection) => {
+            if (selection[0] && selection[0].result) {
+                // Show spinner toast while processing
+                showSpinnerToast(tab.id, 'Analyzing question...');
 
-        if (command === 'search-mcq') {
-            chrome.scripting.executeScript({
-                target: {
-                    tabId: tab.id
-                },
-                function: getSelectedText
-            }, (selection) => {
-                if (selection[0] && selection[0].result) {
-                    // Show spinner toast while processing
-                    showSpinnerToast(tab.id, 'Analyzing question...');
-                    
-                    queryRequest(selection[0].result, true).then(response => {
-                        handleQueryResponse(response, tab.id, true);
-                        shortcutStates[command] = false; // Reset the state after processing
-                    }).catch(error => {
-                        console.error('MCQ shortcut error:', error);
-                        showToast(tab.id, 'MCQ search failed. Please try again.', true, 'An error occurred while processing your MCQ request.');
-                        shortcutStates[command] = false; // Reset the state on error
-                    });
-                } else {
-                    shortcutStates[command] = false; // Reset the state if no selection
-                }
-            });
-        }
+                queryRequest(selection[0].result).then(response => {
+                    handleQueryResponse(response, tab.id);
+                    shortcutStates[command] = false; // Reset the state after processing
+                }).catch(error => {
+                    console.error('Search shortcut error:', error);
+                    showToast(tab.id, 'Search failed. Please try again.', true, 'An error occurred while processing your search request.');
+                    shortcutStates[command] = false; // Reset the state on error
+                });
+            } else {
+                shortcutStates[command] = false; // Reset the state if no selection
+            }
+        });
+    }
 
-        if (command === 'customPaste') {
-            chrome.scripting.executeScript({
-                target: {
-                    tabId: tab.id
-                },
-                func: async () => {
-                    try {
-                        const clipboardText = await navigator.clipboard.readText();
-                        const activeElement = document.activeElement;
-                        
-                        if (activeElement && (activeElement.isContentEditable || activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
-                            const start = activeElement.selectionStart || 0;
-                            const end = activeElement.selectionEnd || 0;
-                            const text = activeElement.value || activeElement.textContent;
-                            const newText = text.substring(0, start) + clipboardText + text.substring(end);
-                            
-                            if (activeElement.isContentEditable) {
-                                activeElement.textContent = newText;
-                            } else {
-                                activeElement.value = newText;
-                            }
-                            
-                            // Dispatch both input and change events
-                            activeElement.dispatchEvent(new Event('input', { bubbles: true }));
-                            activeElement.dispatchEvent(new Event('change', { bubbles: true }));
-                            return true;
+    if (command === 'search-mcq') {
+        chrome.scripting.executeScript({
+            target: {
+                tabId: tab.id
+            },
+            function: getSelectedText
+        }, (selection) => {
+            if (selection[0] && selection[0].result) {
+                // Show spinner toast while processing
+                showSpinnerToast(tab.id, 'Analyzing question...');
+
+                queryRequest(selection[0].result, true).then(response => {
+                    handleQueryResponse(response, tab.id, true);
+                    shortcutStates[command] = false; // Reset the state after processing
+                }).catch(error => {
+                    console.error('MCQ shortcut error:', error);
+                    showToast(tab.id, 'MCQ search failed. Please try again.', true, 'An error occurred while processing your MCQ request.');
+                    shortcutStates[command] = false; // Reset the state on error
+                });
+            } else {
+                shortcutStates[command] = false; // Reset the state if no selection
+            }
+        });
+    }
+
+    if (command === 'customPaste') {
+        chrome.scripting.executeScript({
+            target: {
+                tabId: tab.id
+            },
+            func: async () => {
+                try {
+                    const clipboardText = await navigator.clipboard.readText();
+                    const activeElement = document.activeElement;
+
+                    if (activeElement && (activeElement.isContentEditable || activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+                        const start = activeElement.selectionStart || 0;
+                        const end = activeElement.selectionEnd || 0;
+                        const text = activeElement.value || activeElement.textContent;
+                        const newText = text.substring(0, start) + clipboardText + text.substring(end);
+
+                        if (activeElement.isContentEditable) {
+                            activeElement.textContent = newText;
+                        } else {
+                            activeElement.value = newText;
                         }
-                    } catch (err) {
-                        console.error('Clipboard API read failed:', err);
-                        return false;
-                    }
-                }
-            }, (results) => {
-                shortcutStates[command] = false; // Reset the state after processing
-                if (results && results[0] && !results[0].result) {
-                    showToast(tab.id, 'Paste failed. Please try again.', true);
-                }
-            });
-        }
 
-        if (command === 'nptel') {
-            chrome.scripting.executeScript({
-                target: {
-                    tabId: tab.id
-                },
-                function: getSelectedText
-            }, (results) => {
-                if (results[0] && results[0].result) {
-                    handleNPTEL(results[0], tab.id); // Pass result[0] and tab.id
+                        // Dispatch both input and change events
+                        activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+                        activeElement.dispatchEvent(new Event('change', { bubbles: true }));
+                        return true;
+                    }
+                } catch (err) {
+                    console.error('Clipboard API read failed:', err);
+                    return false;
                 }
-                shortcutStates[command] = false; // Reset the state after processing
-            });
-        }
+            }
+        }, (results) => {
+            shortcutStates[command] = false; // Reset the state after processing
+            if (results && results[0] && !results[0].result) {
+                showToast(tab.id, 'Paste failed. Please try again.', true);
+            }
+        });
+    }
+
+    if (command === 'nptel') {
+        chrome.scripting.executeScript({
+            target: {
+                tabId: tab.id
+            },
+            function: getSelectedText
+        }, (results) => {
+            if (results[0] && results[0].result) {
+                handleNPTEL(results[0], tab.id); // Pass result[0] and tab.id
+            }
+            shortcutStates[command] = false; // Reset the state after processing
+        });
+    }
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "checkLoginStatus") {
-        chrome.storage.local.get(["loggedIn"], function(result) {
+        chrome.storage.local.get(["loggedIn"], function (result) {
             sendResponse({
                 loggedIn: result.loggedIn === true
             });
@@ -908,7 +908,7 @@ function handleNPTEL(result, tabId) {
             if (Array.isArray(bestAnswers) && bestAnswers.length > 0) {
                 // Deduplicate answers - convert to Set and back to Array to remove duplicates
                 const uniqueAnswers = [...new Set(bestAnswers)];
-                
+
                 // Prepare the display string with indexing
                 let answersString;
                 if (uniqueAnswers.length > 1) {
@@ -956,7 +956,7 @@ function handleQueryResponse(response, tabId, isMCQ = false) {
     } else if (response && response.error) {
         // Error case - response contains error information
         const { error, errorType, detailedInfo } = response;
-        
+
         // Show appropriate error toast based on error type
         switch (errorType) {
             case 'rateLimit':
@@ -1009,7 +1009,7 @@ function handleQueryResponseForIamNeoExamly(response, tabId, isMCQ = false, isHa
                 // Typed mode: call _neopassStartTyping to type character-by-character
                 chrome.scripting.executeScript({
                     target: { tabId: tabId },
-                    func: function(code) {
+                    func: function (code) {
                         console.log('[INJECTED] Calling _neopassStartTyping, code length:', code.length);
                         if (typeof window._neopassStartTyping === 'function') {
                             window._neopassStartTyping(code);
@@ -1019,14 +1019,14 @@ function handleQueryResponseForIamNeoExamly(response, tabId, isMCQ = false, isHa
                     },
                     args: [cleanedCode],
                     world: 'MAIN'
-                }).catch(function(err) {
+                }).catch(function (err) {
                     console.error('[worker.js] executeScript (typed) failed:', err);
                 });
             } else {
                 // Instant mode: inject directly into the answer Ace editor only
                 chrome.scripting.executeScript({
                     target: { tabId: tabId },
-                    func: function(code) {
+                    func: function (code) {
                         // Only target the answer editor, not header/footer snippet editors
                         var answerEl = document.querySelector('[aria-labelledby="editor-answer"]');
                         if (answerEl) {
@@ -1035,11 +1035,11 @@ function handleQueryResponseForIamNeoExamly(response, tabId, isMCQ = false, isHa
                                 ed.setValue(code);
                                 ed.clearSelection();
                                 ed.navigateFileEnd();
-                            } catch(e) {}
+                            } catch (e) { }
                         } else {
                             // Fallback: try all editors but skip readonly ones
                             var editors = document.querySelectorAll('.ace_editor');
-                            editors.forEach(function(el) {
+                            editors.forEach(function (el) {
                                 try {
                                     var ed = ace.edit(el);
                                     if (!ed.getReadOnly()) {
@@ -1047,13 +1047,13 @@ function handleQueryResponseForIamNeoExamly(response, tabId, isMCQ = false, isHa
                                         ed.clearSelection();
                                         ed.navigateFileEnd();
                                     }
-                                } catch(e) {}
+                                } catch (e) { }
                             });
                         }
                     },
                     args: [cleanedCode],
                     world: 'MAIN'
-                }).catch(function(err) {
+                }).catch(function (err) {
                     console.error('[worker.js] executeScript failed:', err);
                 });
             }
@@ -1061,7 +1061,7 @@ function handleQueryResponseForIamNeoExamly(response, tabId, isMCQ = false, isHa
     } else if (response && response.error) {
         // Error case - response contains error information
         const { error, errorType, detailedInfo } = response;
-        
+
         // Show appropriate error toast based on error type
         switch (errorType) {
             case 'rateLimit':
@@ -1099,26 +1099,26 @@ async function queryRequest(text, isMCQ = false, isMultipleChoice = false, tabId
     // Check if a request is already in progress
     if (!canMakeRequest()) {
         console.log('[Request Block] Request blocked - another request is in progress');
-        return { 
-            error: 'Please wait for your previous request to complete.', 
+        return {
+            error: 'Please wait for your previous request to complete.',
             errorType: 'rateLimit',
             detailedInfo: 'Multiple simultaneous requests are not allowed. Please wait a moment before trying again.'
         };
     }
-    
+
     // Block new requests
     blockRequests();
-    
+
     try {
         // Check if user has custom API configured
         const customAPIConfig = await getCustomAPIConfig();
-        
+
         if (customAPIConfig.useCustomAPI && customAPIConfig.apiKey) {
             const result = await queryCustomAPI(text, isMCQ, isMultipleChoice, customAPIConfig);
             unblockRequests();
             return result;
         }
-        
+
         // Check if user is logged in
         const {
             accessToken,
@@ -1129,12 +1129,12 @@ async function queryRequest(text, isMCQ = false, isMultipleChoice = false, tabId
         // If not logged in and no custom API configured, require custom API
         if (!accessToken || !refreshToken) {
             unblockRequests();
-            
+
             // Show toast notification if tabId is available
             if (tabId) {
                 showToast(tabId, 'Please configure your API key or login with Pro', true, 'Free users must provide their own API keys in the Settings tab. Click the extension icon to configure.');
             }
-            
+
             // Open popup to Pro tab after a short delay
             setTimeout(() => {
                 try {
@@ -1143,9 +1143,9 @@ async function queryRequest(text, isMCQ = false, isMultipleChoice = false, tabId
                     console.log('Could not open popup automatically:', e.message);
                 }
             }, 1000);
-            
-            return { 
-                error: 'Please configure your custom API key in Settings or login with Pro to use our proxy-server.', 
+
+            return {
+                error: 'Please configure your custom API key in Settings or login with Pro to use our proxy-server.',
                 errorType: 'auth',
                 detailedInfo: 'Free users must provide their own API keys in the Settings tab to use this extension.'
             };
@@ -1176,8 +1176,8 @@ async function queryRequest(text, isMCQ = false, isMultipleChoice = false, tabId
             if (!response.ok && (response.status === 401 || response.status === 403)) {
                 console.log('[queryRequest] Authentication failed - session expired');
                 chrome.storage.local.remove(['accessToken', 'refreshToken', 'loggedIn']);
-                return { 
-                    error: 'Session expired. Please log in again.', 
+                return {
+                    error: 'Session expired. Please log in again.',
                     errorType: 'auth',
                     detailedInfo: 'Your session has expired. Please log in again to continue using NeoPass features.'
                 };
@@ -1187,86 +1187,86 @@ async function queryRequest(text, isMCQ = false, isMultipleChoice = false, tabId
                 let errorMessage = 'An unexpected error occurred. Please try again.';
                 let errorType = 'general';
                 let detailedInfo = `Server responded with status ${response.status}`;
-                
+
                 try {
                     const errorData = await response.json();
-                console.error("Error querying:", errorData);
-                
-                // Handle specific error types based on status code and response
-                if (response.status === 429) {
-                    errorType = 'rateLimit';
-                    if (errorData.error && errorData.error.includes('Token limit exceeded')) {
-                        errorMessage = 'Token limit exceeded. Please upgrade or wait for your limit to reset.';
-                        if (errorData.details) {
-                            detailedInfo = `You have used ${errorData.details.used} out of ${errorData.details.limit} tokens. ${errorData.details.remaining} tokens remaining.`;
+                    console.error("Error querying:", errorData);
+
+                    // Handle specific error types based on status code and response
+                    if (response.status === 429) {
+                        errorType = 'rateLimit';
+                        if (errorData.error && errorData.error.includes('Token limit exceeded')) {
+                            errorMessage = 'Token limit exceeded. Please upgrade or wait for your limit to reset.';
+                            if (errorData.details) {
+                                detailedInfo = `You have used ${errorData.details.used} out of ${errorData.details.limit} tokens. ${errorData.details.remaining} tokens remaining.`;
+                            } else {
+                                detailedInfo = 'You have reached your token limit for this billing period.';
+                            }
+                        } else if (errorData.message && errorData.message.includes('Daily request limit exceeded')) {
+                            errorMessage = 'Daily request limit exceeded. Please try again tomorrow.';
+                            detailedInfo = `You have reached your daily request limit. ${errorData.nextReset ? `Limit resets at ${new Date(errorData.nextReset).toLocaleString()}` : 'Limit resets daily at midnight UTC.'}`;
+                        } else if (errorData.message && errorData.message.includes('wait for your previous request')) {
+                            errorMessage = 'Please wait for your previous request to complete.';
+                            detailedInfo = 'Multiple simultaneous requests are not allowed. Please wait a moment before trying again.';
                         } else {
-                            detailedInfo = 'You have reached your token limit for this billing period.';
+                            errorMessage = 'Too many requests. Please wait before trying again.';
+                            detailedInfo = 'Rate limit exceeded. Please wait a few moments before making another request.';
                         }
-                    } else if (errorData.message && errorData.message.includes('Daily request limit exceeded')) {
-                        errorMessage = 'Daily request limit exceeded. Please try again tomorrow.';
-                        detailedInfo = `You have reached your daily request limit. ${errorData.nextReset ? `Limit resets at ${new Date(errorData.nextReset).toLocaleString()}` : 'Limit resets daily at midnight UTC.'}`;
-                    } else if (errorData.message && errorData.message.includes('wait for your previous request')) {
-                        errorMessage = 'Please wait for your previous request to complete.';
-                        detailedInfo = 'Multiple simultaneous requests are not allowed. Please wait a moment before trying again.';
+                    } else if (response.status === 403) {
+                        errorType = 'forbidden';
+
+                        // Check if this is a Pro subscription expiration
+                        if ((errorData.error && (errorData.error.includes('Pro subscription') || errorData.error.includes('active Pro subscription') || errorData.error.includes('subscription') || errorData.error.includes('expired'))) ||
+                            (errorData.message && (errorData.message.includes('subscription') || errorData.message.includes('expired')))) {
+                            errorMessage = 'Pro subscription required or expired.';
+                            detailedInfo = 'This service requires an active Pro subscription. Please upgrade or renew your Pro subscription.';
+
+                            // Auto-logout user when subscription expires
+                            chrome.storage.local.remove(['accessToken', 'refreshToken', 'loggedIn', 'username', 'isPro', 'loginTimestamp']);
+                            console.log('🔒 Auto-logout: Pro subscription expired');
+                        } else if (errorData.message && errorData.message.includes('star')) {
+                            errorMessage = 'Please star the repository to use this service.';
+                            detailedInfo = 'This service requires starring the GitHub repository. Please star it and try again.';
+                        } else {
+                            errorMessage = 'Access denied. Please check your account status.';
+                            detailedInfo = 'Your request was denied. This may be due to account restrictions or service limitations.';
+                        }
+                    } else if (response.status === 500) {
+                        errorType = 'server';
+                        errorMessage = 'Service temporarily unavailable. Please try again in a moment.';
+                        detailedInfo = 'The server encountered an internal error. This is usually temporary and should resolve shortly.';
+                    } else if (response.status === 400) {
+                        errorType = 'client';
+                        errorMessage = 'Invalid request. Please try rephrasing your question.';
+                        detailedInfo = 'The request format was invalid. Try shortening your text or rephrasing your question.';
                     } else {
-                        errorMessage = 'Too many requests. Please wait before trying again.';
-                        detailedInfo = 'Rate limit exceeded. Please wait a few moments before making another request.';
+                        errorMessage = errorData.message || `Server error (${response.status})`;
+                        detailedInfo = errorData.error || `HTTP ${response.status}: ${errorMessage}`;
                     }
-                } else if (response.status === 403) {
-                    errorType = 'forbidden';
-                    
-                    // Check if this is a Pro subscription expiration
-                    if ((errorData.error && (errorData.error.includes('Pro subscription') || errorData.error.includes('active Pro subscription') || errorData.error.includes('subscription') || errorData.error.includes('expired'))) ||
-                        (errorData.message && (errorData.message.includes('subscription') || errorData.message.includes('expired')))) {
-                        errorMessage = 'Pro subscription required or expired.';
-                        detailedInfo = 'This service requires an active Pro subscription. Please upgrade or renew your Pro subscription.';
-                        
-                        // Auto-logout user when subscription expires
-                        chrome.storage.local.remove(['accessToken', 'refreshToken', 'loggedIn', 'username', 'isPro', 'loginTimestamp']);
-                        console.log('🔒 Auto-logout: Pro subscription expired');
-                    } else if (errorData.message && errorData.message.includes('star')) {
-                        errorMessage = 'Please star the repository to use this service.';
-                        detailedInfo = 'This service requires starring the GitHub repository. Please star it and try again.';
-                    } else {
-                        errorMessage = 'Access denied. Please check your account status.';
-                        detailedInfo = 'Your request was denied. This may be due to account restrictions or service limitations.';
-                    }
-                } else if (response.status === 500) {
-                    errorType = 'server';
-                    errorMessage = 'Service temporarily unavailable. Please try again in a moment.';
-                    detailedInfo = 'The server encountered an internal error. This is usually temporary and should resolve shortly.';
-                } else if (response.status === 400) {
-                    errorType = 'client';
-                    errorMessage = 'Invalid request. Please try rephrasing your question.';
-                    detailedInfo = 'The request format was invalid. Try shortening your text or rephrasing your question.';
-                } else {
-                    errorMessage = errorData.message || `Server error (${response.status})`;
-                    detailedInfo = errorData.error || `HTTP ${response.status}: ${errorMessage}`;
-                }
                 } catch (parseError) {
                     console.error("Error parsing error response:", parseError);
                     detailedInfo = `HTTP ${response.status}: Unable to parse error details`;
                 }
-                
+
                 return { error: errorMessage, errorType, detailedInfo };
             }
 
             const responseData = await response.json();
-            
+
             // Server automatically refreshes access token if it expired
             // Store the new access token (refresh token remains unchanged)
             if (responseData.newAccessToken) {
                 await chrome.storage.local.set({ accessToken: responseData.newAccessToken });
                 console.log('✅ Access token auto-refreshed by server and stored');
             }
-            
+
             return responseData.text;
         } catch (error) {
             console.error("Error querying:", error);
             let errorMessage = 'Network error. Please check your connection and try again.';
             let errorType = 'network';
             let detailedInfo = 'Failed to connect to the service. This could be due to network issues or service downtime.';
-            
+
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
                 errorMessage = 'Unable to connect to the service. Please try again.';
                 detailedInfo = 'Network connection failed. Please check your internet connection and try again.';
@@ -1276,13 +1276,13 @@ async function queryRequest(text, isMCQ = false, isMultipleChoice = false, tabId
             } else {
                 detailedInfo = error.message || 'An unexpected error occurred during the request.';
             }
-            
+
             return { error: errorMessage, errorType, detailedInfo };
         }
     } catch (error) {
         console.error("Error in queryRequest:", error);
-        return { 
-            error: 'An unexpected error occurred.', 
+        return {
+            error: 'An unexpected error occurred.',
             errorType: 'general',
             detailedInfo: error.message || 'Failed to process the request.'
         };
@@ -1314,7 +1314,7 @@ async function getCustomAPIConfig() {
 // Function to query custom AI API
 async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
     const { aiProvider, customEndpoint, apiKey, modelName } = config;
-    
+
     // Construct the prompt based on query type
     let prompt = text;
     if (isMCQ) {
@@ -1324,7 +1324,7 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
             prompt += "\nIMPORTANT: This is a SINGLE CHOICE question where ONLY ONE option is correct. Analyze the question carefully and provide the single correct option.\n\nFormat your response EXACTLY like this:\n- If options are A, B, C: 'A. [text of option A]' or 'C. [text of option C]'\n- If options are 1, 2, 3: '1. [text of option 1]' or '3. [text of option 3]'\n\nDO NOT include explanations, reasoning, or anything else. ONLY the single correct answer in the exact format shown above.\nIf this is not an MCQ question, simply respond with 'Not an MCQ'";
         }
     }
-    
+
     try {
         let keys = [];
         if (apiKey) {
@@ -1333,25 +1333,25 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                 .map(k => k.replace(/[\s"'\[\]]/g, ''))
                 .filter(k => k.length > 0);
         }
-        
+
         // Loop the entire rotation twice to give temporary unavailable keys a 2nd attempt
         let maxAttempts = keys.length > 0 ? keys.length * 2 : 1;
-        
+
         const data = await new Promise(resolve => chrome.storage.local.get(['apiKeyIndex'], resolve));
         let startIndex = data.apiKeyIndex || 0;
-        
+
         let lastError = null;
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             let currentApiKey = apiKey;
             let apiUrl, requestBody, headers;
-            
+
             if (keys.length > 0) {
                 currentApiKey = keys[(startIndex + attempt) % keys.length];
                 // Increment and save the index for entirely new subsequent requests
                 await chrome.storage.local.set({ apiKeyIndex: startIndex + attempt + 1 });
             }
-            
+
             // Configure API call based on provider
             switch (aiProvider) {
                 case 'openai':
@@ -1366,7 +1366,7 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                         temperature: 0.7
                     };
                     break;
-                    
+
                 case 'anthropic':
                     apiUrl = 'https://api.anthropic.com/v1/messages';
                     headers = {
@@ -1380,7 +1380,7 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                         messages: [{ role: 'user', content: prompt }]
                     };
                     break;
-                    
+
                 case 'google':
                     const googleModel = modelName || 'gemini-2.5-flash';
                     apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${currentApiKey}`;
@@ -1391,7 +1391,7 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                         contents: [{ parts: [{ text: prompt }] }]
                     };
                     break;
-                    
+
                 case 'deepseek':
                     apiUrl = 'https://api.deepseek.com/v1/chat/completions';
                     headers = {
@@ -1404,7 +1404,7 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                         temperature: 0.7
                     };
                     break;
-                    
+
                 case 'custom':
                     if (!customEndpoint) {
                         return {
@@ -1423,7 +1423,7 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                         messages: [{ role: 'user', content: prompt }]
                     };
                     break;
-                    
+
                 default:
                     return {
                         error: 'Unknown AI provider',
@@ -1431,13 +1431,13 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                         detailedInfo: 'The selected AI provider is not supported.'
                     };
             }
-            
+
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify(requestBody)
             });
-            
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 lastError = {
@@ -1448,9 +1448,9 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                 console.log(`[queryCustomAPI] API request failed with status ${response.status}. Trying next key if available...`);
                 continue; // Try next key in rotation
             }
-            
+
             const responseData = await response.json();
-            
+
             // Extract response based on provider
             let responseText;
             switch (aiProvider) {
@@ -1458,24 +1458,24 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                 case 'deepseek':
                     responseText = responseData.choices?.[0]?.message?.content;
                     break;
-                    
+
                 case 'anthropic':
                     responseText = responseData.content?.[0]?.text;
                     break;
-                    
+
                 case 'google':
                     responseText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
                     break;
-                    
+
                 case 'custom':
                     // Try common response formats
-                    responseText = responseData.choices?.[0]?.message?.content || 
-                                  responseData.content?.[0]?.text || 
-                                  responseData.response || 
-                                  responseData.text;
+                    responseText = responseData.choices?.[0]?.message?.content ||
+                        responseData.content?.[0]?.text ||
+                        responseData.response ||
+                        responseData.text;
                     break;
             }
-            
+
             if (!responseText) {
                 lastError = {
                     error: 'Invalid API response format',
@@ -1484,7 +1484,7 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                 };
                 continue; // Try next key
             }
-            
+
             return responseText;
         }
 
@@ -1494,7 +1494,7 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
             errorType: 'api',
             detailedInfo: 'Please verify your API keys and rate limits.'
         };
-        
+
     } catch (error) {
         return {
             error: 'Network or API error',
@@ -1540,9 +1540,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             try {
                 const config = message.config;
                 const testPrompt = "Hello, this is a test message. Please respond with 'API connection successful!' if you receive this.";
-                
+
                 const result = await queryCustomAPI(testPrompt, false, false, config);
-                
+
                 if (typeof result === 'string') {
                     sendResponse({
                         success: true,
@@ -1613,15 +1613,16 @@ Respond with ONLY the ${request.programmingLanguage} code:`;
                         queryText = `Instructions: You are tasked with solving a programming problem. Respond strictly with the solution code in the required programming language. 
                             Ensure the code: Meets the requirements outlined in the problem statement.
                             Stricly Passes all test cases, including edge cases and boundary conditions.
+                            Provide ONLY the solution code, no explanations or comments.
                             Always get the input from the users.` +
                             `Question:\n${request.question}\n\n` +
                             (request.programmingLanguage ? `Solve Striclty Using This Programing Language:\n${request.programmingLanguage}` : '') +
-                        (request.inputFormat ? `Input Format:\n${request.inputFormat}\n\n` : '') +
-                        (request.outputFormat ? `Output Format:\n${request.outputFormat}\n\n` : '') +
-                        (request.testCases ? `Test Cases:\n${request.testCases}` : '') +
-                        (request.headerSnippet ? `\n\nHeader Snippet (pre-existing code before your answer, DO NOT include this in your response):\n${request.headerSnippet}` : '') +
-                        (request.footerSnippet ? `\n\nFooter Snippet (pre-existing code after your answer, DO NOT include this in your response):\n${request.footerSnippet}` : '') +
-                        (request.whitelist ? `\n\nWhitelisted Keywords (you MUST use these keywords/identifiers in your solution):\n${request.whitelist}` : '');
+                            (request.inputFormat ? `Input Format:\n${request.inputFormat}\n\n` : '') +
+                            (request.outputFormat ? `Output Format:\n${request.outputFormat}\n\n` : '') +
+                            (request.testCases ? `Test Cases:\n${request.testCases}` : '') +
+                            (request.headerSnippet ? `\n\nHeader Snippet (pre-existing code before your answer, DO NOT include this in your response):\n${request.headerSnippet}` : '') +
+                            (request.footerSnippet ? `\n\nFooter Snippet (pre-existing code after your answer, DO NOT include this in your response):\n${request.footerSnippet}` : '') +
+                            (request.whitelist ? `\n\nWhitelisted Keywords (you MUST use these keywords/identifiers in your solution):\n${request.whitelist}` : '');
                     }
                 } else {
                     // MCQ handling with support for multiple choice
@@ -1637,7 +1638,7 @@ Respond with ONLY the ${request.programmingLanguage} code:`;
                     length: queryText.length
                 });                // Send query and handle response
                 const response = await queryRequest(queryText, request.isMCQ, request.isMultipleChoice, sender.tab.id);
-                
+
                 // Check if response is successful (string) or contains error
                 if (response && typeof response === 'string') {
                     // Success case
@@ -1648,7 +1649,7 @@ Respond with ONLY the ${request.programmingLanguage} code:`;
                         response: response,
                         responseLength: response.length
                     });
-                    
+
                     handleQueryResponseForIamNeoExamly(response, sender.tab.id, request.isMCQ, request.isHackerRank, request.isMultipleChoice, request.isTyped);
                     sendResponse({
                         success: true,
@@ -1676,10 +1677,10 @@ Respond with ONLY the ${request.programmingLanguage} code:`;
 
             } catch (error) {
                 console.error("Query processing error:", error);
-                
+
                 // Show a generic error toast only if the error wasn't already handled by queryRequest
                 showToast(sender.tab.id, 'An unexpected error occurred. Please try again.', true, 'The request failed due to an unexpected error. This may be temporary.');
-                
+
                 sendResponse({
                     error: error.message,
                     status: 'error',
@@ -1696,15 +1697,15 @@ async function handleChatMessage(message, sender) {
     try {
         // Check if user has custom API configured
         const customAPIConfig = await getCustomAPIConfig();
-        
+
         if (customAPIConfig.useCustomAPI && customAPIConfig.apiKey) {
             // Use custom API for chat
-            const chatPrompt = message.context 
+            const chatPrompt = message.context
                 ? `Context: ${message.context}\n\nUser: ${message.message}\n\nPlease provide a helpful response.`
                 : message.message;
-                
+
             const result = await queryCustomAPI(chatPrompt, false, false, customAPIConfig);
-            
+
             if (typeof result === 'string') {
                 sendChatResponse(sender.tab.id, result);
             } else {
@@ -1712,7 +1713,7 @@ async function handleChatMessage(message, sender) {
             }
             return;
         }
-        
+
         // Check if user is logged in
         const {
             accessToken,
@@ -1764,7 +1765,7 @@ async function handleChatMessage(message, sender) {
             } catch (e) {
                 // Couldn't parse error, assume auth failure
             }
-            
+
             // Authentication failed - clear tokens
             chrome.storage.local.remove(['accessToken', 'refreshToken', 'loggedIn']);
             sendChatErrorResponse(sender.tab.id, "Session expired. Please log in again.");
@@ -1774,10 +1775,10 @@ async function handleChatMessage(message, sender) {
         // Handle different error scenarios with specific user messages
         if (!response.ok) {
             let errorMessage = "Sorry, I encountered an error processing your message.";
-            
+
             try {
                 const errorData = await response.json();
-                
+
                 if (response.status === 429) {
                     if (errorData.error && errorData.error.includes('Token limit exceeded')) {
                         errorMessage = "Token limit exceeded. Please upgrade or wait for your limit to reset.";
@@ -1796,7 +1797,7 @@ async function handleChatMessage(message, sender) {
                     if ((errorData.error && (errorData.error.includes('Pro subscription') || errorData.error.includes('active Pro subscription') || errorData.error.includes('subscription') || errorData.error.includes('expired'))) ||
                         (errorData.message && (errorData.message.includes('subscription') || errorData.message.includes('expired')))) {
                         errorMessage = "Your Pro subscription is required or has expired. Please upgrade or renew your Pro subscription to continue using this service.";
-                        
+
                         // Auto-logout user when subscription expires
                         chrome.storage.local.remove(['accessToken', 'refreshToken', 'loggedIn', 'username', 'isPro', 'loginTimestamp']);
                         console.log('🔒 Auto-logout: Pro subscription expired');
@@ -1816,7 +1817,7 @@ async function handleChatMessage(message, sender) {
                 console.error("Error parsing chat error response:", parseError);
                 errorMessage = `Chat service error (${response.status}). Please try again later.`;
             }
-            
+
             // Send error message with proper error role
             sendChatErrorResponse(sender.tab.id, errorMessage);
             return;
@@ -1884,9 +1885,9 @@ async function handleChatMessage(message, sender) {
         }
     } catch (error) {
         console.error("Chat processing error:", error);
-        
+
         let errorMessage = "Sorry, I encountered an error processing your message.";
-        
+
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
             errorMessage = "Unable to connect to the chat service. Please check your connection and try again.";
         } else if (error.message.includes('timeout')) {
@@ -1894,7 +1895,7 @@ async function handleChatMessage(message, sender) {
         } else {
             errorMessage = "Sorry, I encountered an unexpected error. Please try again or log in again if the issue persists.";
         }
-        
+
         sendChatErrorResponse(sender.tab.id, errorMessage);
     }
 }
@@ -1962,13 +1963,13 @@ function copyToClipboard(text) {
     chrome.tabs.query({
         active: true,
         currentWindow: true
-    }, function(tabs) {
+    }, function (tabs) {
         if (tabs[0]) {
             chrome.scripting.executeScript({
                 target: {
                     tabId: tabs[0].id
                 },
-                func: async function(content) {
+                func: async function (content) {
                     try {
                         await navigator.clipboard.writeText(content);
                     } catch (err) {
@@ -2012,7 +2013,7 @@ let activeToastId = null;
 function removeExistingToast(tabId) {
     chrome.scripting.executeScript({
         target: { tabId: tabId },
-        func: function() {
+        func: function () {
             // Remove all possible toast types
             const toastSelectors = [
                 '#neopass-active-toast',
@@ -2021,7 +2022,7 @@ function removeExistingToast(tabId) {
                 '[id*="toast"]',
                 '[class*="toast"]'
             ];
-            
+
             toastSelectors.forEach(selector => {
                 const existingToasts = document.querySelectorAll(selector);
                 existingToasts.forEach(toast => {
@@ -2066,7 +2067,7 @@ async function toggleToastOpacity() {
     chrome.tabs.query({
         active: true,
         currentWindow: true
-    }, function(tabs) {
+    }, function (tabs) {
         if (tabs[0]) {
             showOpacityLevelToast(tabs[0].id, `Toast opacity set to: ${currentOpacityLevel}`);
         }
@@ -2091,12 +2092,12 @@ async function getToastOpacity() {
 function showOpacityLevelToast(tabId, message) {
     // Remove any existing toast first
     removeExistingToast(tabId);
-    
+
     chrome.scripting.executeScript({
         target: {
             tabId: tabId
         },
-        func: function(msg, opacityLevel) {
+        func: function (msg, opacityLevel) {
             // Create toast container
             const toast = document.createElement('div');
             toast.id = 'neopass-active-toast'; // Add ID for tracking
@@ -2117,20 +2118,20 @@ function showOpacityLevelToast(tabId, message) {
             toast.style.border = '1px solid rgba(255, 255, 255, 0.1)';
             toast.style.backdropFilter = 'blur(10px)';
             toast.style.WebkitBackdropFilter = 'blur(10px)';
-            
+
             // Create header container
             const headerContainer = document.createElement('div');
             headerContainer.style.display = 'flex';
             headerContainer.style.justifyContent = 'space-between';
             headerContainer.style.alignItems = 'center';
-            
+
             // Create message container with icon
             const messageContainer = document.createElement('div');
             messageContainer.style.display = 'flex';
             messageContainer.style.alignItems = 'center';
             messageContainer.style.gap = '10px';
             messageContainer.style.flexGrow = '1';
-            
+
             // Settings icon (blue indicator dot)
             const settingsIcon = document.createElement('span');
             settingsIcon.style.display = 'inline-block';
@@ -2139,7 +2140,7 @@ function showOpacityLevelToast(tabId, message) {
             settingsIcon.style.backgroundColor = '#64b5f6';
             settingsIcon.style.borderRadius = '50%';
             settingsIcon.style.boxShadow = '0 0 4px rgba(100, 181, 246, 0.6)';
-            
+
             // Message text
             const messageText = document.createElement('span');
             messageText.textContent = msg;
@@ -2147,10 +2148,10 @@ function showOpacityLevelToast(tabId, message) {
             messageText.style.fontWeight = '500';
             messageText.style.lineHeight = '1.4';
             messageText.style.wordBreak = 'break-word';
-            
+
             messageContainer.appendChild(settingsIcon);
             messageContainer.appendChild(messageText);
-            
+
             // Close button
             const closeBtn = document.createElement('button');
             closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
@@ -2164,7 +2165,7 @@ function showOpacityLevelToast(tabId, message) {
             closeBtn.style.borderRadius = '4px';
             closeBtn.style.lineHeight = '0';
             closeBtn.style.transition = 'all 0.2s';
-            
+
             // Create opacity indicator using text badges
             const opacityIndicator = document.createElement('div');
             opacityIndicator.style.marginTop = '10px';
@@ -2173,7 +2174,7 @@ function showOpacityLevelToast(tabId, message) {
             opacityIndicator.style.alignItems = 'center';
             opacityIndicator.style.justifyContent = 'space-between';
             opacityIndicator.style.gap = '8px';
-            
+
             // Helper function to create opacity badge
             function createOpacityBadge(level, text, isActive) {
                 const badge = document.createElement('div');
@@ -2182,7 +2183,7 @@ function showOpacityLevelToast(tabId, message) {
                 badge.style.padding = '3px 6px';
                 badge.style.borderRadius = '4px';
                 badge.style.fontWeight = isActive ? '600' : '400';
-                
+
                 if (isActive) {
                     badge.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
                     badge.style.color = 'white';
@@ -2190,51 +2191,51 @@ function showOpacityLevelToast(tabId, message) {
                     badge.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
                     badge.style.color = 'rgba(255, 255, 255, 0.5)';
                 }
-                
+
                 return badge;
             }
-            
+
             // Add opacity level indicators
             const lowBadge = createOpacityBadge('low', 'Low', opacityLevel <= 0.2);
             const mediumBadge = createOpacityBadge('medium', 'Medium', opacityLevel > 0.2 && opacityLevel < 1.0);
             const highBadge = createOpacityBadge('high', 'High', opacityLevel >= 1.0);
-            
+
             opacityIndicator.appendChild(lowBadge);
             opacityIndicator.appendChild(mediumBadge);
             opacityIndicator.appendChild(highBadge);
-            
+
             // Event listeners
-            closeBtn.onmouseover = function() {
+            closeBtn.onmouseover = function () {
                 closeBtn.style.color = '#ffffff';
                 closeBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
             };
-            
-            closeBtn.onmouseout = function() {
+
+            closeBtn.onmouseout = function () {
                 closeBtn.style.color = 'rgba(255, 255, 255, 0.8)';
                 closeBtn.style.backgroundColor = 'transparent';
             };
-            
-            closeBtn.onclick = function() {
+
+            closeBtn.onclick = function () {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(10px) translateX(-50%)';
                 setTimeout(() => toast.remove(), 300);
             };
-            
+
             // Assemble the toast
             headerContainer.appendChild(messageContainer);
             headerContainer.appendChild(closeBtn);
-            
+
             toast.appendChild(headerContainer);
             toast.appendChild(opacityIndicator);
-            
+
             document.body.appendChild(toast);
-            
+
             // Add entrance animation
             toast.style.transform = 'translateY(10px) translateX(-50%)';
             setTimeout(() => {
                 toast.style.transform = 'translateY(0) translateX(-50%)';
             }, 10);
-            
+
             // Auto-hide toast after a delay
             let hideTimeoutId = setTimeout(() => {
                 toast.style.opacity = '0';
@@ -2249,7 +2250,7 @@ function showOpacityLevelToast(tabId, message) {
 // Update existing showToast function to use the current opacity level
 async function showToast(tabId, message, isError = false, detailedInfo = '') {
     const opacity = await getToastOpacity();
-    
+
     // Set default detailed info if not provided
     if (!detailedInfo) {
         if (isError) {
@@ -2266,7 +2267,7 @@ async function showToast(tabId, message, isError = false, detailedInfo = '') {
         target: {
             tabId: tabId
         },
-        func: function(msg, isError, opacity, detailedInfo) {
+        func: function (msg, isError, opacity, detailedInfo) {
             // Create toast container
             const toast = document.createElement('div');
             toast.id = 'neopass-active-toast'; // Add ID for tracking
@@ -2287,18 +2288,18 @@ async function showToast(tabId, message, isError = false, detailedInfo = '') {
             toast.style.border = isError ? '1px solid rgba(255, 107, 107, 0.2)' : '1px solid rgba(255, 255, 255, 0.1)';
             toast.style.backdropFilter = 'blur(10px)';
             toast.style.WebkitBackdropFilter = 'blur(10px)';
-            
+
             // Create header container
             const headerContainer = document.createElement('div');
             headerContainer.style.display = 'flex';
             headerContainer.style.justifyContent = 'space-between';
             headerContainer.style.alignItems = 'flex-start';
-            
+
             // Create message container
             const messageContainer = document.createElement('div');
             messageContainer.style.flexGrow = '1';
             messageContainer.style.marginRight = '12px';
-            
+
             // Add indicator dot
             const indicatorDot = document.createElement('span');
             indicatorDot.style.display = 'inline-block';
@@ -2308,7 +2309,7 @@ async function showToast(tabId, message, isError = false, detailedInfo = '') {
             indicatorDot.style.borderRadius = '50%';
             indicatorDot.style.marginRight = '8px';
             indicatorDot.style.boxShadow = isError ? '0 0 4px rgba(255, 107, 107, 0.6)' : '0 0 4px rgba(74, 222, 128, 0.6)';
-            
+
             // Add message text
             const messageText = document.createElement('span');
             messageText.textContent = msg;
@@ -2316,22 +2317,22 @@ async function showToast(tabId, message, isError = false, detailedInfo = '') {
             messageText.style.fontWeight = '500';
             messageText.style.lineHeight = '1.4';
             messageText.style.wordBreak = 'break-word';
-            
+
             // Combine dot and text
             const messageContent = document.createElement('div');
             messageContent.style.display = 'flex';
             messageContent.style.alignItems = 'center';
             messageContent.appendChild(indicatorDot);
             messageContent.appendChild(messageText);
-            
+
             messageContainer.appendChild(messageContent);
-            
+
             // Create buttons container
             const buttonsContainer = document.createElement('div');
             buttonsContainer.style.display = 'flex';
             buttonsContainer.style.alignItems = 'center';
             buttonsContainer.style.marginLeft = '8px';
-            
+
             // Info button
             const infoBtn = document.createElement('button');
             infoBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
@@ -2345,7 +2346,7 @@ async function showToast(tabId, message, isError = false, detailedInfo = '') {
             infoBtn.style.borderRadius = '4px';
             infoBtn.style.lineHeight = '0';
             infoBtn.style.transition = 'all 0.2s';
-            
+
             // Close button
             const closeBtn = document.createElement('button');
             closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
@@ -2376,34 +2377,34 @@ async function showToast(tabId, message, isError = false, detailedInfo = '') {
             // Add event listeners
             let expanded = false;
             let hideTimeoutId = null;
-            
-            infoBtn.onmouseover = function() {
+
+            infoBtn.onmouseover = function () {
                 infoBtn.style.color = isError ? '#ff6b6b' : '#ffffff';
                 infoBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
             };
-            
-            infoBtn.onmouseout = function() {
+
+            infoBtn.onmouseout = function () {
                 infoBtn.style.color = isError ? 'rgba(255, 107, 107, 0.8)' : 'rgba(255, 255, 255, 0.8)';
                 infoBtn.style.backgroundColor = 'transparent';
             };
-            
-            closeBtn.onmouseover = function() {
+
+            closeBtn.onmouseover = function () {
                 closeBtn.style.color = isError ? '#ff6b6b' : '#ffffff';
                 closeBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
             };
-            
-            closeBtn.onmouseout = function() {
+
+            closeBtn.onmouseout = function () {
                 closeBtn.style.color = isError ? 'rgba(255, 107, 107, 0.8)' : 'rgba(255, 255, 255, 0.8)';
                 closeBtn.style.backgroundColor = 'transparent';
             };
-            
-            infoBtn.onclick = function() {
+
+            infoBtn.onclick = function () {
                 expanded = !expanded;
                 detailedInfoContainer.style.display = expanded ? 'block' : 'none';
-                infoBtn.innerHTML = expanded ? 
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>' : 
+                infoBtn.innerHTML = expanded ?
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>' :
                     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
-                
+
                 // Clear the auto-hide timeout when info is expanded
                 if (expanded) {
                     if (hideTimeoutId) {
@@ -2419,14 +2420,14 @@ async function showToast(tabId, message, isError = false, detailedInfo = '') {
                     }, 5000);
                 }
             };
-            
-            closeBtn.onclick = function() {
+
+            closeBtn.onclick = function () {
                 // Clear any existing timeout
                 if (hideTimeoutId) {
                     clearTimeout(hideTimeoutId);
                     hideTimeoutId = null;
                 }
-                
+
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(10px) translateX(-50%)';
                 setTimeout(() => toast.remove(), 300);
@@ -2437,10 +2438,10 @@ async function showToast(tabId, message, isError = false, detailedInfo = '') {
             buttonsContainer.appendChild(closeBtn);
             headerContainer.appendChild(messageContainer);
             headerContainer.appendChild(buttonsContainer);
-            
+
             toast.appendChild(headerContainer);
             toast.appendChild(detailedInfoContainer);
-            
+
             document.body.appendChild(toast);
 
             // Add entrance animation
@@ -2463,7 +2464,7 @@ async function showToast(tabId, message, isError = false, detailedInfo = '') {
 // Show stealth mode toast notification
 async function showStealthToast(tabId, message, stealthEnabled) {
     const opacity = await getToastOpacity();
-    
+
     // Remove any existing toast first
     await removeExistingToast(tabId);
 
@@ -2471,14 +2472,14 @@ async function showStealthToast(tabId, message, stealthEnabled) {
         target: {
             tabId: tabId
         },
-        func: function(msg, stealthEnabled, opacity) {
+        func: function (msg, stealthEnabled, opacity) {
             // Create toast container
             const toast = document.createElement('div');
             toast.id = 'neopass-active-toast'; // Use same ID for tracking
-            
+
             // Set colors based on stealth mode state
             const textColor = stealthEnabled ? '#4ade80' : '#ff6b6b';
-            
+
             toast.style.position = 'fixed';
             toast.style.bottom = '20px';
             toast.style.left = '50%';
@@ -2496,13 +2497,13 @@ async function showStealthToast(tabId, message, stealthEnabled) {
             toast.style.border = '1px solid rgba(255, 255, 255, 0.1)';
             toast.style.backdropFilter = 'blur(10px)';
             toast.style.WebkitBackdropFilter = 'blur(10px)';
-            
+
             // Create header container
             const headerContainer = document.createElement('div');
             headerContainer.style.display = 'flex';
             headerContainer.style.justifyContent = 'space-between';
             headerContainer.style.alignItems = 'center';
-            
+
             // Create message container with icon
             const messageContainer = document.createElement('div');
             messageContainer.style.display = 'flex';
@@ -2510,7 +2511,7 @@ async function showStealthToast(tabId, message, stealthEnabled) {
             messageContainer.style.gap = '10px';
             messageContainer.style.flexGrow = '1';
             messageContainer.style.marginRight = '12px';
-            
+
             // Add indicator dot
             const indicatorDot = document.createElement('span');
             indicatorDot.style.display = 'inline-block';
@@ -2519,7 +2520,7 @@ async function showStealthToast(tabId, message, stealthEnabled) {
             indicatorDot.style.backgroundColor = textColor;
             indicatorDot.style.borderRadius = '50%';
             indicatorDot.style.boxShadow = `0 0 4px ${stealthEnabled ? 'rgba(74, 222, 128, 0.6)' : 'rgba(255, 107, 107, 0.6)'}`;
-            
+
             // Message text
             const messageText = document.createElement('span');
             messageText.innerHTML = msg.replace(/\n/g, '<br>');
@@ -2530,10 +2531,10 @@ async function showStealthToast(tabId, message, stealthEnabled) {
             messageText.style.color = textColor;
             messageText.style.textAlign = 'center';
             messageText.style.flex = '1';
-            
+
             messageContainer.appendChild(indicatorDot);
             messageContainer.appendChild(messageText);
-            
+
             // Close button
             const closeBtn = document.createElement('button');
             closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
@@ -2546,30 +2547,30 @@ async function showStealthToast(tabId, message, stealthEnabled) {
             closeBtn.style.borderRadius = '4px';
             closeBtn.style.lineHeight = '0';
             closeBtn.style.transition = 'all 0.2s';
-            
+
             // Event listeners
-            closeBtn.onmouseover = function() {
+            closeBtn.onmouseover = function () {
                 closeBtn.style.color = '#ffffff';
                 closeBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
             };
-            
-            closeBtn.onmouseout = function() {
+
+            closeBtn.onmouseout = function () {
                 closeBtn.style.color = 'rgba(255, 255, 255, 0.8)';
                 closeBtn.style.backgroundColor = 'transparent';
             };
-            
-            closeBtn.onclick = function() {
+
+            closeBtn.onclick = function () {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(10px) translateX(-50%)';
                 setTimeout(() => toast.remove(), 300);
             };
-            
+
             // Assemble the toast
             headerContainer.appendChild(messageContainer);
             headerContainer.appendChild(closeBtn);
-            
+
             toast.appendChild(headerContainer);
-            
+
             document.body.appendChild(toast);
 
             // Add entrance animation
@@ -2653,7 +2654,7 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     currentKey = message.key;
-    if (message.action === "pageReloaded" || message.action === "windowFocus") {} else if (message.action === "openNewTab") {
+    if (message.action === "pageReloaded" || message.action === "windowFocus") { } else if (message.action === "openNewTab") {
         openNewMinimizedWindowWithUrl(message.url);
     }
     if (message.action === 'showToast') {
@@ -2676,12 +2677,12 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
             chrome.storage.local.remove(['accessToken', 'refreshToken', 'loggedIn', 'username']);
 
             // Notify active tabs about logout
-            chrome.tabs.query({}, function(tabs) {
+            chrome.tabs.query({}, function (tabs) {
                 tabs.forEach(tab => {
                     chrome.tabs.sendMessage(tab.id, {
-                            action: 'remoteLogout'
-                        })
-                        .catch(() => {}); // Ignore errors for inactive tabs
+                        action: 'remoteLogout'
+                    })
+                        .catch(() => { }); // Ignore errors for inactive tabs
                 });
             });
         }
@@ -2802,7 +2803,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'resetContext') {
         // Log the context reset for debugging
         console.log('Chat context reset requested from tab:', sender.tab?.id);
-        
+
         // Optionally, you could clear any stored conversation context here
         // For now, just acknowledge the reset
         if (sendResponse) {
@@ -2829,14 +2830,14 @@ async function checkAndHandleSessionExpiration() {
                 await chrome.storage.local.remove(['accessToken', 'refreshToken', 'loggedIn', 'username', 'loginTimestamp', 'stealth', 'useCustomAPI', 'aiProvider', 'customEndpoint', 'customAPIKey', 'customModelName']);
 
                 // Refresh all tabs to apply logout state
-                chrome.tabs.query({}, function(tabs) {
+                chrome.tabs.query({}, function (tabs) {
                     tabs.forEach(tab => {
                         // First notify tabs about session expiration
                         try {
                             chrome.tabs.sendMessage(tab.id, {
-                                    action: 'sessionExpired'
-                                })
-                                .catch(() => {}); // Ignore errors for tabs that can't receive messages
+                                action: 'sessionExpired'
+                            })
+                                .catch(() => { }); // Ignore errors for tabs that can't receive messages
                         } catch (err) {
                             // Ignore errors
                         }
@@ -2975,7 +2976,7 @@ loadNptelDataset();
 // Update showMCQToast to use the current opacity level and include info button
 async function showMCQToast(tabId, message, detailedInfo = '') {
     const opacity = await getToastOpacity();
-    
+
     // Set default detailed info if not provided
     if (!detailedInfo) {
         detailedInfo = 'This is the answer to the MCQ question based on analysis of the question content. If you received an incorrect answer, please try rephrasing your question or providing more context.';
@@ -2988,10 +2989,10 @@ async function showMCQToast(tabId, message, detailedInfo = '') {
         target: {
             tabId: tabId
         },
-        func: function(msg, opacity, detailedInfo) {
+        func: function (msg, opacity, detailedInfo) {
             // Check if this is "Not an MCQ" response
             const isNotMCQ = msg.toLowerCase().includes("not an mcq");
-            
+
             // Create toast container
             const toast = document.createElement('div');
             toast.id = 'neopass-active-toast'; // Add ID for tracking
@@ -3012,26 +3013,26 @@ async function showMCQToast(tabId, message, detailedInfo = '') {
             toast.style.border = '1px solid rgba(255, 255, 255, 0.1)';
             toast.style.backdropFilter = 'blur(10px)';
             toast.style.WebkitBackdropFilter = 'blur(10px)';
-            
+
             // Create header container
             const headerContainer = document.createElement('div');
             headerContainer.style.display = 'flex';
             headerContainer.style.justifyContent = 'space-between';
             headerContainer.style.alignItems = 'center';
-            
+
             // Create answer container with formatted answer
             const answerContainer = document.createElement('div');
             answerContainer.style.display = 'flex';
             answerContainer.style.alignItems = 'center';
             answerContainer.style.flexGrow = '1';
-            
+
             if (!isNotMCQ) {
                 // Parse the message to separate option identifier from answer text
                 let optionIdentifier, optionAnswer;
-                
+
                 // Handle different format patterns like "A. answer", "1. answer", "A answer", "1 answer"
                 const match = msg.match(/^([A-Za-z0-9]+)\.?\s+(.+)$/);
-                
+
                 if (match) {
                     optionIdentifier = match[1].trim();
                     optionAnswer = match[2].trim();
@@ -3041,11 +3042,11 @@ async function showMCQToast(tabId, message, detailedInfo = '') {
                     optionIdentifier = parts[0].replace('.', '');
                     optionAnswer = parts.slice(1).join(' ');
                 }
-                
+
                 // Determine if option is letter or number based
                 const isLetter = /^[A-Za-z]$/.test(optionIdentifier);
                 const optionColor = isLetter ? '#4285f4' : '#f4b400'; // Blue for letters, Yellow/Gold for numbers
-                
+
                 // Option indicator dot
                 const optionDot = document.createElement('div');
                 optionDot.style.width = '22px';
@@ -3061,13 +3062,13 @@ async function showMCQToast(tabId, message, detailedInfo = '') {
                 optionDot.style.fontSize = '12px';
                 optionDot.style.boxShadow = `0 2px 4px ${optionColor}66`;
                 optionDot.textContent = optionIdentifier.toUpperCase();
-                
+
                 // Answer text
                 const answerText = document.createElement('span');
                 answerText.textContent = optionAnswer;
                 answerText.style.fontSize = '14px';
                 answerText.style.fontWeight = '500';
-                
+
                 answerContainer.appendChild(optionDot);
                 answerContainer.appendChild(answerText);
             } else {
@@ -3076,16 +3077,16 @@ async function showMCQToast(tabId, message, detailedInfo = '') {
                 messageText.textContent = msg;
                 messageText.style.fontSize = '14px';
                 messageText.style.fontWeight = '500';
-                
+
                 answerContainer.appendChild(messageText);
             }
-            
+
             // Create buttons container
             const buttonsContainer = document.createElement('div');
             buttonsContainer.style.display = 'flex';
             buttonsContainer.style.alignItems = 'center';
             buttonsContainer.style.marginLeft = '10px';
-            
+
             // Info button
             const infoBtn = document.createElement('button');
             infoBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
@@ -3099,7 +3100,7 @@ async function showMCQToast(tabId, message, detailedInfo = '') {
             infoBtn.style.borderRadius = '4px';
             infoBtn.style.lineHeight = '0';
             infoBtn.style.transition = 'all 0.2s';
-            
+
             // Close button
             const closeBtn = document.createElement('button');
             closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
@@ -3112,7 +3113,7 @@ async function showMCQToast(tabId, message, detailedInfo = '') {
             closeBtn.style.borderRadius = '4px';
             closeBtn.style.lineHeight = '0';
             closeBtn.style.transition = 'all 0.2s';
-            
+
             // Detailed info container (initially hidden)
             const detailedInfoContainer = document.createElement('div');
             detailedInfoContainer.style.marginTop = '12px';
@@ -3125,41 +3126,41 @@ async function showMCQToast(tabId, message, detailedInfo = '') {
             detailedInfoContainer.style.overflow = 'auto';
             detailedInfoContainer.style.lineHeight = '1.4';
             detailedInfoContainer.style.color = 'rgba(255, 255, 255, 0.9)';
-            detailedInfoContainer.textContent = isNotMCQ ? 
-                'The selected text does not appear to be a multiple-choice question. Please try selecting a valid MCQ.' : 
+            detailedInfoContainer.textContent = isNotMCQ ?
+                'The selected text does not appear to be a multiple-choice question. Please try selecting a valid MCQ.' :
                 detailedInfo;
-            
+
             // Add event listeners
             let expanded = false;
             let hideTimeoutId = null;
-            
-            infoBtn.onmouseover = function() {
+
+            infoBtn.onmouseover = function () {
                 infoBtn.style.color = '#ffffff';
                 infoBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
             };
-            
-            infoBtn.onmouseout = function() {
+
+            infoBtn.onmouseout = function () {
                 infoBtn.style.color = 'rgba(255, 255, 255, 0.8)';
                 infoBtn.style.backgroundColor = 'transparent';
             };
-            
-            closeBtn.onmouseover = function() {
+
+            closeBtn.onmouseover = function () {
                 closeBtn.style.color = '#ffffff';
                 closeBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
             };
-            
-            closeBtn.onmouseout = function() {
+
+            closeBtn.onmouseout = function () {
                 closeBtn.style.color = 'rgba(255, 255, 255, 0.8)';
                 closeBtn.style.backgroundColor = 'transparent';
             };
-            
-            infoBtn.onclick = function() {
+
+            infoBtn.onclick = function () {
                 expanded = !expanded;
                 detailedInfoContainer.style.display = expanded ? 'block' : 'none';
-                infoBtn.innerHTML = expanded ? 
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>' : 
+                infoBtn.innerHTML = expanded ?
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>' :
                     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
-                
+
                 // Clear the auto-hide timeout when info is expanded
                 if (expanded) {
                     if (hideTimeoutId) {
@@ -3175,30 +3176,30 @@ async function showMCQToast(tabId, message, detailedInfo = '') {
                     }, 5000);
                 }
             };
-            
-            closeBtn.onclick = function() {
+
+            closeBtn.onclick = function () {
                 // Clear any existing timeout
                 if (hideTimeoutId) {
                     clearTimeout(hideTimeoutId);
                     hideTimeoutId = null;
                 }
-                
+
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(10px) translateX(-50%)';
                 setTimeout(() => toast.remove(), 300);
             };
-            
+
             // Assemble the toast
             buttonsContainer.appendChild(infoBtn);
             buttonsContainer.appendChild(closeBtn);
             headerContainer.appendChild(answerContainer);
             headerContainer.appendChild(buttonsContainer);
-            
+
             toast.appendChild(headerContainer);
             toast.appendChild(detailedInfoContainer);
-            
+
             document.body.appendChild(toast);
-            
+
             // Add entrance animation
             toast.style.transform = 'translateY(10px) translateX(-50%)';
             setTimeout(() => {
@@ -3219,7 +3220,7 @@ async function showMCQToast(tabId, message, detailedInfo = '') {
 // Update showNPTELToast to use the current opacity level and include info button
 async function showNPTELToast(tabId, message, isError = false, detailedInfo = '') {
     const opacity = await getToastOpacity();
-    
+
     // Set default detailed info if not provided
     if (!detailedInfo) {
         if (isError) {
@@ -3236,7 +3237,7 @@ async function showNPTELToast(tabId, message, isError = false, detailedInfo = ''
         target: {
             tabId: tabId
         },
-        func: function(msg, isError, opacity, detailedInfo) {
+        func: function (msg, isError, opacity, detailedInfo) {
             // Create toast container
             const toast = document.createElement('div');
             toast.id = 'neopass-active-toast'; // Add ID for tracking
@@ -3257,18 +3258,18 @@ async function showNPTELToast(tabId, message, isError = false, detailedInfo = ''
             toast.style.border = isError ? '1px solid rgba(255, 107, 107, 0.2)' : '1px solid rgba(255, 255, 255, 0.1)';
             toast.style.backdropFilter = 'blur(10px)';
             toast.style.WebkitBackdropFilter = 'blur(10px)';
-            
+
             // Create header container
             const headerContainer = document.createElement('div');
             headerContainer.style.display = 'flex';
             headerContainer.style.justifyContent = 'space-between';
             headerContainer.style.alignItems = 'flex-start';
-            
+
             // Create message container
             const messageContainer = document.createElement('div');
             messageContainer.style.flexGrow = '1';
             messageContainer.style.marginRight = '12px';
-            
+
             // Add indicator dot
             const indicatorDot = document.createElement('span');
             indicatorDot.style.display = 'inline-block';
@@ -3278,7 +3279,7 @@ async function showNPTELToast(tabId, message, isError = false, detailedInfo = ''
             indicatorDot.style.borderRadius = '50%';
             indicatorDot.style.marginRight = '8px';
             indicatorDot.style.boxShadow = isError ? '0 0 4px rgba(255, 107, 107, 0.6)' : '0 0 4px rgba(74, 222, 128, 0.6)';
-            
+
             // Add message text
             const messageText = document.createElement('span');
             messageText.innerHTML = msg.replace(/\n/g, '<br>'); // Use innerHTML to handle newlines
@@ -3286,22 +3287,22 @@ async function showNPTELToast(tabId, message, isError = false, detailedInfo = ''
             messageText.style.fontWeight = '500';
             messageText.style.lineHeight = '1.4';
             messageText.style.wordBreak = 'break-word';
-            
+
             // Combine dot and text
             const messageContent = document.createElement('div');
             messageContent.style.display = 'flex';
             messageContent.style.alignItems = 'center';
             messageContent.appendChild(indicatorDot);
             messageContent.appendChild(messageText);
-            
+
             messageContainer.appendChild(messageContent);
-            
+
             // Create buttons container
             const buttonsContainer = document.createElement('div');
             buttonsContainer.style.display = 'flex';
             buttonsContainer.style.alignItems = 'center';
             buttonsContainer.style.marginLeft = '8px';
-            
+
             // Info button
             const infoBtn = document.createElement('button');
             infoBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
@@ -3315,7 +3316,7 @@ async function showNPTELToast(tabId, message, isError = false, detailedInfo = ''
             infoBtn.style.borderRadius = '4px';
             infoBtn.style.lineHeight = '0';
             infoBtn.style.transition = 'all 0.2s';
-            
+
             // Close button
             const closeBtn = document.createElement('button');
             closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
@@ -3346,34 +3347,34 @@ async function showNPTELToast(tabId, message, isError = false, detailedInfo = ''
             // Add event listeners
             let expanded = false;
             let hideTimeoutId = null;
-            
-            infoBtn.onmouseover = function() {
+
+            infoBtn.onmouseover = function () {
                 infoBtn.style.color = isError ? '#ff6b6b' : '#ffffff';
                 infoBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
             };
-            
-            infoBtn.onmouseout = function() {
+
+            infoBtn.onmouseout = function () {
                 infoBtn.style.color = isError ? 'rgba(255, 107, 107, 0.8)' : 'rgba(255, 255, 255, 0.8)';
                 infoBtn.style.backgroundColor = 'transparent';
             };
-            
-            closeBtn.onmouseover = function() {
+
+            closeBtn.onmouseover = function () {
                 closeBtn.style.color = isError ? '#ff6b6b' : '#ffffff';
                 closeBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
             };
-            
-            closeBtn.onmouseout = function() {
+
+            closeBtn.onmouseout = function () {
                 closeBtn.style.color = isError ? 'rgba(255, 107, 107, 0.8)' : 'rgba(255, 255, 255, 0.8)';
                 closeBtn.style.backgroundColor = 'transparent';
             };
-            
-            infoBtn.onclick = function() {
+
+            infoBtn.onclick = function () {
                 expanded = !expanded;
                 detailedInfoContainer.style.display = expanded ? 'block' : 'none';
-                infoBtn.innerHTML = expanded ? 
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>' : 
+                infoBtn.innerHTML = expanded ?
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>' :
                     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
-                
+
                 // Clear the auto-hide timeout when info is expanded
                 if (expanded) {
                     if (hideTimeoutId) {
@@ -3389,14 +3390,14 @@ async function showNPTELToast(tabId, message, isError = false, detailedInfo = ''
                     }, 5000);
                 }
             };
-            
-            closeBtn.onclick = function() {
+
+            closeBtn.onclick = function () {
                 // Clear any existing timeout
                 if (hideTimeoutId) {
                     clearTimeout(hideTimeoutId);
                     hideTimeoutId = null;
                 }
-                
+
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(10px) translateX(-50%)';
                 setTimeout(() => toast.remove(), 300);
@@ -3407,10 +3408,10 @@ async function showNPTELToast(tabId, message, isError = false, detailedInfo = ''
             buttonsContainer.appendChild(closeBtn);
             headerContainer.appendChild(messageContainer);
             headerContainer.appendChild(buttonsContainer);
-            
+
             toast.appendChild(headerContainer);
             toast.appendChild(detailedInfoContainer);
-            
+
             document.body.appendChild(toast);
 
             // Add entrance animation
@@ -3432,7 +3433,7 @@ async function showNPTELToast(tabId, message, isError = false, detailedInfo = ''
 // Show a spinner toast while AI query is being processed
 async function showSpinnerToast(tabId, message = 'Processing your request...') {
     const opacity = await getToastOpacity();
-    
+
     // Remove any existing toast first
     await removeExistingToast(tabId);
 
@@ -3440,7 +3441,7 @@ async function showSpinnerToast(tabId, message = 'Processing your request...') {
         target: {
             tabId: tabId
         },
-        func: function(msg, opacity) {
+        func: function (msg, opacity) {
             // Create toast container
             const toast = document.createElement('div');
             toast.id = 'neopass-spinner-toast';
@@ -3461,20 +3462,20 @@ async function showSpinnerToast(tabId, message = 'Processing your request...') {
             toast.style.border = '1px solid rgba(255, 255, 255, 0.1)';
             toast.style.backdropFilter = 'blur(10px)';
             toast.style.WebkitBackdropFilter = 'blur(10px)';
-            
+
             // Create header container
             const headerContainer = document.createElement('div');
             headerContainer.style.display = 'flex';
             headerContainer.style.justifyContent = 'space-between';
             headerContainer.style.alignItems = 'center';
-            
+
             // Create message container with spinner
             const messageContainer = document.createElement('div');
             messageContainer.style.display = 'flex';
             messageContainer.style.alignItems = 'center';
             messageContainer.style.gap = '10px';
             messageContainer.style.flexGrow = '1';
-            
+
             // Spinner indicator (pulsing dot)
             const spinnerDot = document.createElement('span');
             spinnerDot.style.display = 'inline-block';
@@ -3484,7 +3485,7 @@ async function showSpinnerToast(tabId, message = 'Processing your request...') {
             spinnerDot.style.borderRadius = '50%';
             spinnerDot.style.boxShadow = '0 0 4px rgba(100, 181, 246, 0.6)';
             spinnerDot.style.animation = 'pulse 1.5s ease-in-out infinite';
-            
+
             // Message text
             const messageText = document.createElement('span');
             messageText.textContent = msg;
@@ -3492,10 +3493,10 @@ async function showSpinnerToast(tabId, message = 'Processing your request...') {
             messageText.style.fontWeight = '500';
             messageText.style.lineHeight = '1.4';
             messageText.style.wordBreak = 'break-word';
-            
+
             messageContainer.appendChild(spinnerDot);
             messageContainer.appendChild(messageText);
-            
+
             // Close button
             const closeBtn = document.createElement('button');
             closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
@@ -3509,7 +3510,7 @@ async function showSpinnerToast(tabId, message = 'Processing your request...') {
             closeBtn.style.borderRadius = '4px';
             closeBtn.style.lineHeight = '0';
             closeBtn.style.transition = 'all 0.2s';
-            
+
             // Add CSS animation keyframes
             const style = document.createElement('style');
             style.textContent = `
@@ -3525,31 +3526,31 @@ async function showSpinnerToast(tabId, message = 'Processing your request...') {
                 }
             `;
             document.head.appendChild(style);
-            
+
             // Event listeners
-            closeBtn.onmouseover = function() {
+            closeBtn.onmouseover = function () {
                 closeBtn.style.color = '#ffffff';
                 closeBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
             };
-            
-            closeBtn.onmouseout = function() {
+
+            closeBtn.onmouseout = function () {
                 closeBtn.style.color = 'rgba(255, 255, 255, 0.8)';
                 closeBtn.style.backgroundColor = 'transparent';
             };
-            
-            closeBtn.onclick = function() {
+
+            closeBtn.onclick = function () {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(10px) translateX(-50%)';
                 setTimeout(() => toast.remove(), 300);
             };
-            
+
             // Assemble and append
             headerContainer.appendChild(messageContainer);
             headerContainer.appendChild(closeBtn);
             toast.appendChild(headerContainer);
-            
+
             document.body.appendChild(toast);
-            
+
             // Add entrance animation
             toast.style.transform = 'translateY(10px) translateX(-50%)';
             setTimeout(() => {
