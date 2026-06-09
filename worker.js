@@ -1326,155 +1326,172 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
     }
     
     try {
-        let apiUrl, requestBody, headers;
-        
-        let currentApiKey = apiKey;
-        
-        // API Key Rotation Logic
+        let keys = [];
         if (apiKey && apiKey.includes(',')) {
-            const keys = apiKey.split(',').map(k => k.trim()).filter(k => k);
+            keys = apiKey.split(',').map(k => k.trim()).filter(k => k);
+        } else if (apiKey) {
+            keys = [apiKey.trim()];
+        }
+        
+        let maxAttempts = keys.length > 0 ? keys.length : 1;
+        
+        const data = await new Promise(resolve => chrome.storage.local.get(['apiKeyIndex'], resolve));
+        let startIndex = data.apiKeyIndex || 0;
+        
+        let lastError = null;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            let currentApiKey = apiKey;
+            let apiUrl, requestBody, headers;
+            
             if (keys.length > 0) {
-                const data = await new Promise(resolve => chrome.storage.local.get(['apiKeyIndex'], resolve));
-                let index = data.apiKeyIndex || 0;
-                
-                currentApiKey = keys[index % keys.length];
-                
-                // Increment and save the index for the next request
-                await chrome.storage.local.set({ apiKeyIndex: index + 1 });
+                currentApiKey = keys[(startIndex + attempt) % keys.length];
+                // Increment and save the index for entirely new subsequent requests
+                await chrome.storage.local.set({ apiKeyIndex: startIndex + attempt + 1 });
             }
-        }
-        
-        // Configure API call based on provider
-        switch (aiProvider) {
-            case 'openai':
-                apiUrl = 'https://api.openai.com/v1/chat/completions';
-                headers = {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentApiKey}`
-                };
-                requestBody = {
-                    model: modelName || 'gpt-4o-mini',
-                    messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.7
-                };
-                break;
-                
-            case 'anthropic':
-                apiUrl = 'https://api.anthropic.com/v1/messages';
-                headers = {
-                    'Content-Type': 'application/json',
-                    'x-api-key': currentApiKey,
-                    'anthropic-version': '2023-06-01'
-                };
-                requestBody = {
-                    model: modelName || 'claude-3-5-sonnet-20241022',
-                    max_tokens: 4096,
-                    messages: [{ role: 'user', content: prompt }]
-                };
-                break;
-                
-            case 'google':
-                const googleModel = modelName || 'gemini-2.5-flash';
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${currentApiKey}`;
-                headers = {
-                    'Content-Type': 'application/json'
-                };
-                requestBody = {
-                    contents: [{ parts: [{ text: prompt }] }]
-                };
-                break;
-                
-            case 'deepseek':
-                apiUrl = 'https://api.deepseek.com/v1/chat/completions';
-                headers = {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentApiKey}`
-                };
-                requestBody = {
-                    model: modelName || 'deepseek-chat',
-                    messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.7
-                };
-                break;
-                
-            case 'custom':
-                if (!customEndpoint) {
-                    return {
-                        error: 'Custom endpoint not configured',
-                        errorType: 'config',
-                        detailedInfo: 'Please configure a custom API endpoint in the extension settings.'
+            
+            // Configure API call based on provider
+            switch (aiProvider) {
+                case 'openai':
+                    apiUrl = 'https://api.openai.com/v1/chat/completions';
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentApiKey}`
                     };
-                }
-                apiUrl = customEndpoint;
-                headers = {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentApiKey}`
+                    requestBody = {
+                        model: modelName || 'gpt-4o-mini',
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: 0.7
+                    };
+                    break;
+                    
+                case 'anthropic':
+                    apiUrl = 'https://api.anthropic.com/v1/messages';
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'x-api-key': currentApiKey,
+                        'anthropic-version': '2023-06-01'
+                    };
+                    requestBody = {
+                        model: modelName || 'claude-3-5-sonnet-20241022',
+                        max_tokens: 4096,
+                        messages: [{ role: 'user', content: prompt }]
+                    };
+                    break;
+                    
+                case 'google':
+                    const googleModel = modelName || 'gemini-2.5-flash';
+                    apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${currentApiKey}`;
+                    headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    requestBody = {
+                        contents: [{ parts: [{ text: prompt }] }]
+                    };
+                    break;
+                    
+                case 'deepseek':
+                    apiUrl = 'https://api.deepseek.com/v1/chat/completions';
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentApiKey}`
+                    };
+                    requestBody = {
+                        model: modelName || 'deepseek-chat',
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: 0.7
+                    };
+                    break;
+                    
+                case 'custom':
+                    if (!customEndpoint) {
+                        return {
+                            error: 'Custom endpoint not configured',
+                            errorType: 'config',
+                            detailedInfo: 'Please configure a custom API endpoint in the extension settings.'
+                        };
+                    }
+                    apiUrl = customEndpoint;
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentApiKey}`
+                    };
+                    requestBody = {
+                        model: modelName || 'default',
+                        messages: [{ role: 'user', content: prompt }]
+                    };
+                    break;
+                    
+                default:
+                    return {
+                        error: 'Unknown AI provider',
+                        errorType: 'config',
+                        detailedInfo: 'The selected AI provider is not supported.'
+                    };
+            }
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                lastError = {
+                    error: `API request failed: ${response.status}`,
+                    errorType: 'api',
+                    detailedInfo: errorData.error?.message || errorData.message || `HTTP ${response.status}: ${response.statusText}`
                 };
-                requestBody = {
-                    model: modelName || 'default',
-                    messages: [{ role: 'user', content: prompt }]
+                console.log(`[queryCustomAPI] API request failed with status ${response.status}. Trying next key if available...`);
+                continue; // Try next key in rotation
+            }
+            
+            const responseData = await response.json();
+            
+            // Extract response based on provider
+            let responseText;
+            switch (aiProvider) {
+                case 'openai':
+                case 'deepseek':
+                    responseText = responseData.choices?.[0]?.message?.content;
+                    break;
+                    
+                case 'anthropic':
+                    responseText = responseData.content?.[0]?.text;
+                    break;
+                    
+                case 'google':
+                    responseText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+                    break;
+                    
+                case 'custom':
+                    // Try common response formats
+                    responseText = responseData.choices?.[0]?.message?.content || 
+                                  responseData.content?.[0]?.text || 
+                                  responseData.response || 
+                                  responseData.text;
+                    break;
+            }
+            
+            if (!responseText) {
+                lastError = {
+                    error: 'Invalid API response format',
+                    errorType: 'parse',
+                    detailedInfo: 'Could not extract response text from API response.'
                 };
-                break;
-                
-            default:
-                return {
-                    error: 'Unknown AI provider',
-                    errorType: 'config',
-                    detailedInfo: 'The selected AI provider is not supported.'
-                };
+                continue; // Try next key
+            }
+            
+            return responseText;
         }
-        
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(requestBody)
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            return {
-                error: `API request failed: ${response.status}`,
-                errorType: 'api',
-                detailedInfo: errorData.error?.message || errorData.message || `HTTP ${response.status}: ${response.statusText}`
-            };
-        }
-        
-        const data = await response.json();
-        
-        // Extract response based on provider
-        let responseText;
-        switch (aiProvider) {
-            case 'openai':
-            case 'deepseek':
-                responseText = data.choices?.[0]?.message?.content;
-                break;
-                
-            case 'anthropic':
-                responseText = data.content?.[0]?.text;
-                break;
-                
-            case 'google':
-                responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                break;
-                
-            case 'custom':
-                // Try common response formats
-                responseText = data.choices?.[0]?.message?.content || 
-                              data.content?.[0]?.text || 
-                              data.response || 
-                              data.text;
-                break;
-        }
-        
-        if (!responseText) {
-            return {
-                error: 'Invalid API response format',
-                errorType: 'parse',
-                detailedInfo: 'Could not extract response text from API response.'
-            };
-        }
-        
-        return responseText;
+
+        // Exhausted all keys
+        return lastError || {
+            error: 'All configured API keys failed.',
+            errorType: 'api',
+            detailedInfo: 'Please verify your API keys and rate limits.'
+        };
         
     } catch (error) {
         return {
