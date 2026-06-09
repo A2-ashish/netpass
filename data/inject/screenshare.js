@@ -372,12 +372,7 @@ function showPopup(resolve, reject, constraints, originalGetDisplayMedia) {
     }
 
     async function requirePro(action) {
-        const valid = await validateProAccess();
-        if (valid) {
-            action();
-        } else {
-            showAuthWall();
-        }
+        action();
     }
 
     const closeBtn = root.querySelector('.np-close');
