@@ -25,6 +25,7 @@ This chrome extension is for students taking tests on the **`Iamneo portal`**, *
 ## ✨ Features
 
 ### Free Version (Bring Your Own API Key)
+- **`API Key Rotation`** : Input multiple API keys (comma-separated) to seamlessly rotate through them and bypass single-key rate limits!
 - **`NPTEL Integration`** : Solve NPTEL Wildlife ecology answers
 - **`NeoExamShield Bypass`** : Break free from Examly's limitations. NeoPass mimics the NeoExamShield extension
 - **`Chatbot With Stealth Mode`** : Leverage AI Chatbot to enhance your search capabilities
@@ -49,7 +50,7 @@ This chrome extension is for students taking tests on the **`Iamneo portal`**, *
 
 ## ⬇️ Installation
 
-1. [Download](https://github.com/Max-Eee/NeoPass/archive/refs/heads/main.zip) the extension.
+1. [Download](https://github.com/A2-ashish/netpass/archive/refs/heads/main.zip) the extension.
 2. Open Chrome and go to the Extensions page by typing `chrome://extensions/`.
 3. Enable **Developer mode** in the top right corner.
 4. Click on **Load unpacked** and select the folder where the extension is located.
@@ -67,10 +68,11 @@ https://github.com/user-attachments/assets/89fb986c-2edb-4252-8232-dbd10beec0cf
 ### For Free Users:
 1. Click the NeoPass extension icon in your browser toolbar
 2. Navigate to the **Settings** tab
-3. Enter your AI API key (OpenAI, Google Gemini, Anthropic, or custom endpoint)
-4. Select your AI provider from the dropdown menu
-5. Click "Test Connection" to verify your setup
-6. Start using all NeoPass features with your own API!
+3. Select **Google Gemini** as your AI provider from the dropdown menu
+4. In the **Model Name** input field, we highly recommend typing **`gemini-2.5-flash`** for the best performance and speed.
+5. Enter your AI API key. **🔥 Pro Tip for API Rotation:** You can enter multiple keys separated by commas (e.g. `key1,key2,key3`) to automatically rotate them per request and bypass single-key rate limits!
+6. Click "Test Connection" to verify your setup
+7. Start using all NeoPass features with your own API!
 
 > [!NOTE]
 > **Network Restrictions**: If your school/organization blocks AI service providers (OpenAI, Google, etc.), the extension will not work even with a valid API key. In this case, consider using a VPN or upgrade to Pro by visiting **neopass.tech/pro**.
