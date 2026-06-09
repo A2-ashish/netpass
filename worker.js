@@ -1326,11 +1326,14 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
     }
     
     try {
+        // Remove any accidental quotation marks or brackets from the input string
+        let cleanApiKey = apiKey ? apiKey.replace(/["'\[\]]/g, '') : '';
+        
         let keys = [];
-        if (apiKey && apiKey.includes(',')) {
-            keys = apiKey.split(',').map(k => k.trim()).filter(k => k);
-        } else if (apiKey) {
-            keys = [apiKey.trim()];
+        if (cleanApiKey && cleanApiKey.includes(',')) {
+            keys = cleanApiKey.split(',').map(k => k.trim()).filter(k => k);
+        } else if (cleanApiKey) {
+            keys = [cleanApiKey.trim()];
         }
         
         // Loop the entire rotation twice to give temporary unavailable keys a 2nd attempt
