@@ -1302,7 +1302,7 @@ async function getCustomAPIConfig() {
         ], (result) => {
             resolve({
                 useCustomAPI: result.useCustomAPI || false,
-                aiProvider: result.aiProvider || 'openai',
+                aiProvider: result.aiProvider || 'google',
                 customEndpoint: result.customEndpoint || '',
                 apiKey: result.customAPIKey || '',
                 modelName: result.customModelName || ''

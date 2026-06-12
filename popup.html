@@ -766,7 +766,7 @@
                                 <select id="aiProvider" class="glow-input" style="font-size: 0.75rem;">
                                     <option value="openai">OpenAI</option>
                                     <option value="anthropic">Claude (Anthropic)</option>
-                                    <option value="google">Google Gemini</option>
+                                    <option value="google" selected>Google Gemini</option>
                                     <option value="deepseek">DeepSeek</option>
                                     <option value="custom">Custom Provider</option>
                                 </select>
@@ -784,8 +784,8 @@
                             
                             <div class="mb-4">
                                 <label for="modelName" class="block text-sm mb-2" style="font-weight: bold; font-size: 0.75rem;">Model Name:</label>
-                                <input type="text" id="modelName" class="glow-input" placeholder="e.g., gpt-4, claude-3-opus" style="font-size: 0.75rem;">
-                                <div style="font-size: 0.65rem; color: #888; margin-top: 4px;">Leave empty for provider default</div>
+                                <input type="text" id="modelName" class="glow-input" placeholder="gemini-2.5-flash" value="gemini-2.5-flash" style="font-size: 0.75rem;">
+                                <div style="font-size: 0.65rem; color: #888; margin-top: 4px;">Recommended: gemini-2.5-flash</div>
                             </div>
                             
                             <button id="testAPIConfig" class="glow-button" style="width: 100%; padding: 8px; font-size: 0.75rem;">
