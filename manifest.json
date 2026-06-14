@@ -14,6 +14,7 @@
         "data/inject/customPaste.js",
         "data/inject/mock_code.js",
         "data/inject/exam.js",
+        "data/inject/universalType.js",
         "data/lib/showdown.min.js",
         "metadata.json",
         "contentScript.js",
@@ -99,6 +100,16 @@
       ]
     },
     {
+      "js": ["data/inject/universalType.js"],
+      "run_at": "document_idle",
+      "all_frames": true,
+      "matchOriginAsFallback": true,
+      "world": "MAIN",
+      "matches": [
+        "<all_urls>"
+      ]
+    },
+    {
       "js": ["data/inject/screenshare-bridge.js"],
       "run_at": "document_start",
       "all_frames": true,
@@ -154,6 +165,13 @@
         "mac": "Alt+Shift+V"
       },
       "description": "Paste using drag-and-drop when blocked"
+    },
+    "universalType": {
+      "suggested_key": {
+        "default": "Alt+Shift+U",
+        "mac": "Ctrl+Shift+U"
+      },
+      "description": "Universal Type — type clipboard code into any editor"
     }
   },
   "icons": {

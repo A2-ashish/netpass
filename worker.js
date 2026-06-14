@@ -3,7 +3,8 @@ const shortcutStates = {
     'search': false,
     'search-mcq': false,
     'nptel': false,
-    'customPaste': false
+    'customPaste': false,
+    'universalType': false
 };
 
 // Request blocking mechanism to prevent multiple simultaneous API requests
@@ -658,6 +659,11 @@ chrome.runtime.onInstalled.addListener(() => {
             title: 'Paste by Typing',
             contexts: ['editable']
         });
+        chrome.contextMenus.create({
+            id: 'universalType',
+            title: 'Universal Type (Paste by Typing into any editor)',
+            contexts: ['editable', 'page']
+        });
     }
 });
 
@@ -758,6 +764,45 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
                     showToast(tab.id, 'Paste by typing operation failed. Please try again.', true);
                 }
             });
+        });
+    }
+
+    // Handle universal type menu item
+    if (info.menuItemId === 'universalType') {
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+                if (typeof window._neopassUniversalType === 'function') {
+                    window._neopassUniversalType();
+                    return true;
+                }
+                return false;
+            },
+            world: 'MAIN'
+        }, (results) => {
+            if (chrome.runtime.lastError) {
+                showToast(tab.id, 'Universal Type failed. Please try again.', true);
+                return;
+            }
+            if (results && results[0] && !results[0].result) {
+                // Fallback: inject the script first then try again
+                chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    files: ['data/inject/universalType.js']
+                }, () => {
+                    chrome.scripting.executeScript({
+                        target: { tabId: tab.id },
+                        func: () => {
+                            if (typeof window._neopassUniversalType === 'function') {
+                                window._neopassUniversalType();
+                                return true;
+                            }
+                            return false;
+                        },
+                        world: 'MAIN'
+                    });
+                });
+            }
         });
     }
 });
@@ -870,6 +915,46 @@ chrome.commands.onCommand.addListener((command, tab) => {
                 handleNPTEL(results[0], tab.id); // Pass result[0] and tab.id
             }
             shortcutStates[command] = false; // Reset the state after processing
+        });
+    }
+
+    if (command === 'universalType') {
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+                if (typeof window._neopassUniversalType === 'function') {
+                    window._neopassUniversalType();
+                    return true;
+                }
+                return false;
+            },
+            world: 'MAIN'
+        }, (results) => {
+            if (chrome.runtime.lastError) {
+                showToast(tab.id, 'Universal Type failed. Please try again.', true);
+                shortcutStates[command] = false;
+                return;
+            }
+            if (results && results[0] && !results[0].result) {
+                // Script not loaded yet — inject it first
+                chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    files: ['data/inject/universalType.js']
+                }, () => {
+                    chrome.scripting.executeScript({
+                        target: { tabId: tab.id },
+                        func: () => {
+                            if (typeof window._neopassUniversalType === 'function') {
+                                window._neopassUniversalType();
+                                return true;
+                            }
+                            return false;
+                        },
+                        world: 'MAIN'
+                    });
+                });
+            }
+            shortcutStates[command] = false;
         });
     }
 });
