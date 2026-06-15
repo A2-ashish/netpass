@@ -961,19 +961,24 @@ chrome.commands.onCommand.addListener((command, tab) => {
             });
         };
 
-        // Check if user has text selected on the page (search across all frames and inputs)
+        // Check if user has text selected on the page (checks all frames and shadow DOMs)
         chrome.scripting.executeScript({
             target: { tabId: tab.id, allFrames: true },
             func: () => {
-                let text = window.getSelection().toString().trim();
-                // If not found, try to check if it's inside a textarea or input that has focus
-                if (!text && document.activeElement) {
+                let sel = window.getSelection().toString().trim();
+                
+                // If standard selection is empty, check if we're in a textarea/input
+                if (!sel && document.activeElement) {
                     const el = document.activeElement;
-                    if ((el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') && el.value !== undefined) {
-                        text = el.value.substring(el.selectionStart, el.selectionEnd).trim();
+                    if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+                        sel = el.value.substring(el.selectionStart, el.selectionEnd).trim();
+                    } else if (el.shadowRoot) {
+                        // Check shadow DOM
+                        const shadowSel = el.shadowRoot.getSelection ? el.shadowRoot.getSelection().toString().trim() : '';
+                        if (shadowSel) sel = shadowSel;
                     }
                 }
-                return text;
+                return sel;
             }
         }, (selResults) => {
             if (chrome.runtime.lastError) {
@@ -981,12 +986,12 @@ chrome.commands.onCommand.addListener((command, tab) => {
                 return;
             }
             
-            // Look through all frames to find one that has text selected
+            // Find the first frame that returned selected text
             let selectedText = '';
-            if (selResults && selResults.length > 0) {
-                for (const res of selResults) {
-                    if (res.result) {
-                        selectedText = res.result;
+            if (selResults) {
+                for (const result of selResults) {
+                    if (result.result) {
+                        selectedText = result.result;
                         break;
                     }
                 }
@@ -1002,7 +1007,7 @@ chrome.commands.onCommand.addListener((command, tab) => {
                             Do not include any comments in the code.
                             Always get the input from the users.
                             If no programming language is specified, use Python by default.` +
-                            `Question:\n${selectedText}`;
+                    `Question:\n${selectedText}`;
 
                 queryRequest(codingPrompt, false, false, tab.id).then(response => {
                     if (response && typeof response === 'string') {
@@ -1029,6 +1034,70 @@ chrome.commands.onCommand.addListener((command, tab) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "universalPasteSolve") {
+        const tabId = sender.tab.id;
+        const clipText = message.text;
+
+        if (clipText) {
+            const codingPrompt = `Instructions: You are tasked with solving a programming problem. Respond strictly with the solution code in the required programming language. 
+                        Ensure the code: Meets the requirements outlined in the problem statement.
+                        Stricly Passes all test cases, including edge cases and boundary conditions.
+                        Provide ONLY the solution code, no explanations or comments.
+                        Do not include any comments in the code.
+                        Always get the input from the users.
+                        If no programming language is specified, use Python by default.` +
+                `Question:\n${clipText}`;
+
+            queryRequest(codingPrompt, false, false, tabId).then(response => {
+                if (response && typeof response === 'string') {
+                    const cleaned = response.trim()
+                        .replace(/^```[a-zA-Z0-9]*\s*\n?/, '')
+                        .replace(/\n?```\s*$/, '');
+                    
+                    // Helper to invoke universalType
+                    const invokeUT = (tId, code) => {
+                        chrome.scripting.executeScript({
+                            target: { tabId: tId },
+                            func: (c) => {
+                                if (typeof window._neopassUniversalType === 'function') {
+                                    window._neopassUniversalType(c || undefined);
+                                    return true;
+                                }
+                                return false;
+                            },
+                            args: [code],
+                            world: 'MAIN'
+                        }, (results) => {
+                            if (results && results[0] && !results[0].result) {
+                                chrome.scripting.executeScript({
+                                    target: { tabId: tId },
+                                    files: ['data/inject/universalType.js']
+                                }, () => {
+                                    chrome.scripting.executeScript({
+                                        target: { tabId: tId },
+                                        func: (c) => {
+                                            if (typeof window._neopassUniversalType === 'function') {
+                                                window._neopassUniversalType(c || undefined);
+                                            }
+                                        },
+                                        args: [code],
+                                        world: 'MAIN'
+                                    });
+                                });
+                            }
+                        });
+                    };
+                    invokeUT(tabId, cleaned);
+                } else if (response && response.error) {
+                    handleQueryResponse(response, tabId);
+                }
+            }).catch(err => {
+                console.error('Universal Type AI error:', err);
+                showToast(tabId, 'Search failed. Please try again.', true);
+            });
+        }
+    }
+
     if (message.action === "checkLoginStatus") {
         chrome.storage.local.get(["loggedIn"], function (result) {
             sendResponse({

@@ -177,3 +177,30 @@ function removeInjectedElement() {
   }
 }
 
+// Listen for Alt+Shift+P to trigger Universal Paste Solve (AI solve for clipboard)
+document.addEventListener('keydown', async function(event) {
+    const modifierKey = window.isMac ? event.ctrlKey : event.altKey;
+    if (modifierKey && event.shiftKey && event.code === 'KeyP') {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        try {
+            const clipText = await navigator.clipboard.readText();
+            if (clipText) {
+                chrome.runtime.sendMessage({
+                    action: "universalPasteSolve",
+                    text: clipText
+                });
+            }
+        } catch (err) {
+            console.error("Failed to read clipboard for Alt+Shift+P:", err);
+            // Fallback if clipboard read fails
+            chrome.runtime.sendMessage({
+                action: "showToast",
+                message: "Clipboard permission needed for Alt+Shift+P",
+                isError: true
+            });
+        }
+    }
+}, true);
+

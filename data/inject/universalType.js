@@ -441,27 +441,6 @@
     // ── Keyboard Shortcut Listener ──────────────────────────────────────
     // ALT+Shift+U on Windows/Linux, Ctrl+Shift+U on Mac
     // This runs in MAIN world; chrome.commands won't fire here, so we 
-    // listen for the key combo directly as a backup.
-
-    document.addEventListener('keydown', function (event) {
-        const modifierKey = window.isMac ? event.ctrlKey : event.altKey;
-        if (modifierKey && event.shiftKey && event.code === 'KeyU') {
-            event.preventDefault();
-            event.stopPropagation();
-            // If text is selected, let worker.js handle AI query
-            let selectedText = window.getSelection().toString().trim();
-            if (!selectedText && document.activeElement) {
-                const el = document.activeElement;
-                if ((el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') && el.value !== undefined) {
-                    selectedText = el.value.substring(el.selectionStart, el.selectionEnd).trim();
-                }
-            }
-            if (selectedText) return;
-            // No text selected → clipboard typing
-            performUniversalType();
-        }
-    }, true);
-
     // ── Expose for worker.js / chrome.scripting.executeScript ───────────
     window._neopassUniversalType = performUniversalType;
 
