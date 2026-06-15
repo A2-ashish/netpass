@@ -449,7 +449,13 @@
             event.preventDefault();
             event.stopPropagation();
             // If text is selected, let worker.js handle AI query
-            const selectedText = window.getSelection().toString().trim();
+            let selectedText = window.getSelection().toString().trim();
+            if (!selectedText && document.activeElement) {
+                const el = document.activeElement;
+                if ((el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') && el.value !== undefined) {
+                    selectedText = el.value.substring(el.selectionStart, el.selectionEnd).trim();
+                }
+            }
             if (selectedText) return;
             // No text selected → clipboard typing
             performUniversalType();

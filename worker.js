@@ -961,16 +961,36 @@ chrome.commands.onCommand.addListener((command, tab) => {
             });
         };
 
-        // Check if user has text selected on the page
+        // Check if user has text selected on the page (search across all frames and inputs)
         chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => window.getSelection().toString().trim()
+            target: { tabId: tab.id, allFrames: true },
+            func: () => {
+                let text = window.getSelection().toString().trim();
+                // If not found, try to check if it's inside a textarea or input that has focus
+                if (!text && document.activeElement) {
+                    const el = document.activeElement;
+                    if ((el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') && el.value !== undefined) {
+                        text = el.value.substring(el.selectionStart, el.selectionEnd).trim();
+                    }
+                }
+                return text;
+            }
         }, (selResults) => {
             if (chrome.runtime.lastError) {
                 invokeUT(tab.id, null);
                 return;
             }
-            const selectedText = selResults && selResults[0] ? selResults[0].result : '';
+            
+            // Look through all frames to find one that has text selected
+            let selectedText = '';
+            if (selResults && selResults.length > 0) {
+                for (const res of selResults) {
+                    if (res.result) {
+                        selectedText = res.result;
+                        break;
+                    }
+                }
+            }
 
             if (selectedText) {
                 // Text selected → query AI with same coding prompt as Alt+Shift+T
@@ -979,6 +999,7 @@ chrome.commands.onCommand.addListener((command, tab) => {
                             Ensure the code: Meets the requirements outlined in the problem statement.
                             Stricly Passes all test cases, including edge cases and boundary conditions.
                             Provide ONLY the solution code, no explanations or comments.
+                            Do not include any comments in the code.
                             Always get the input from the users.
                             If no programming language is specified, use Python by default.` +
                             `Question:\n${selectedText}`;
