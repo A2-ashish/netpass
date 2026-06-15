@@ -159,13 +159,6 @@
       },
       "description": "nptel"
     },
-    "customPaste": {
-      "suggested_key": {
-        "default": "Alt+Shift+V",
-        "mac": "Alt+Shift+V"
-      },
-      "description": "Paste using drag-and-drop when blocked"
-    },
     "universalType": {
       "suggested_key": {
         "default": "Alt+Shift+U",
