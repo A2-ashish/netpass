@@ -263,3 +263,16 @@ document.addEventListener('keydown', function(event) {
     }
 }, true);
 
+// Listen for Alt+Shift+X to trigger Vision OCR (Screenshot) Solve
+document.addEventListener('keydown', function(event) {
+    const modifierKey = window.isMac ? event.ctrlKey : event.altKey;
+    if (modifierKey && event.shiftKey && event.code === 'KeyX') {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        chrome.runtime.sendMessage({
+            action: "universalVisionSolve"
+        });
+    }
+}, true);
+

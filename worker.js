@@ -1000,23 +1000,22 @@ chrome.commands.onCommand.addListener((command, tab) => {
             if (selectedText) {
                 // Text selected → query AI with same coding prompt as Alt+Shift+T
 
-                const codingPrompt = `Instructions: Determine if this is a programming problem or a Multiple Choice Question (MCQ).
-1. If it is a programming problem: Respond strictly with ONLY the raw solution code in the required language (Python by default). Do NOT use markdown formatting, do NOT wrap the code in backticks, and do NOT include any comments or explanations.
-2. If it is an MCQ: Respond strictly starting with "MCQ_ANSWER: " followed by the correct option(s). Do not explain.
-Question:\n${selectedText}`;
+                const codingPrompt = `Instructions: You are tasked with solving a programming problem. Respond strictly with the solution code in the required programming language. 
+                            Ensure the code: Meets the requirements outlined in the problem statement.
+                            Stricly Passes all test cases, including edge cases and boundary conditions.
+                            Provide ONLY the solution code, no explanations or comments.
+                            Do not include any comments in the code.
+                            Always get the input from the users.
+                            If no programming language is specified, use Python by default.` +
+                    `Question:\n${selectedText}`;
 
                 queryRequest(codingPrompt, false, false, tab.id).then(response => {
                     if (response && typeof response === 'string') {
-                        if (response.trim().startsWith('MCQ_ANSWER:')) {
-                            const mcqResult = response.trim().replace(/^MCQ_ANSWER:\s*/, '');
-                            showMCQToast(tab.id, mcqResult);
-                        } else {
-                            // Strip markdown code fences just in case
-                            const cleaned = response.trim()
-                                .replace(/^```[a-zA-Z0-9]*\s*\n?/, '')
-                                .replace(/\n?```\s*$/, '');
-                            invokeUT(tab.id, cleaned);
-                        }
+                        // Strip markdown code fences
+                        const cleaned = response.trim()
+                            .replace(/^```[a-zA-Z0-9]*\s*\n?/, '')
+                            .replace(/\n?```\s*$/, '');
+                        invokeUT(tab.id, cleaned);
                     } else if (response && response.error) {
                         handleQueryResponse(response, tab.id);
                         shortcutStates[command] = false;
@@ -1035,23 +1034,42 @@ Question:\n${selectedText}`;
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === "universalPasteSolve" || message.action === "universalExtractSolve") {
+    if (message.action === "universalVisionSolve") {
         const tabId = sender.tab.id;
-        const clipText = message.text;
+        const windowId = sender.tab.windowId;
 
-        if (clipText) {
-            const codingPrompt = `Instructions: Determine if this is a programming problem or a Multiple Choice Question (MCQ).
-1. If it is a programming problem: Respond strictly with ONLY the raw solution code in the required language (Python by default). Do NOT use markdown formatting, do NOT wrap the code in backticks, and do NOT include any comments or explanations.
-2. If it is an MCQ: Respond strictly starting with "MCQ_ANSWER: " followed by the correct option(s). Do not explain.
-Question:\n${clipText}`;
+        chrome.tabs.captureVisibleTab({ format: 'jpeg', quality: 50 }, (dataUrl) => {
+            if (chrome.runtime.lastError || !dataUrl) {
+                const errMsg = chrome.runtime.lastError ? chrome.runtime.lastError.message : "No data URL returned";
+                console.error("Capture failed:", errMsg);
+                showToast(tabId, `Capture failed: ${errMsg}. Note: This does not work on chrome:// pages.`, true);
+                return;
+            }
 
-            queryRequest(codingPrompt, false, false, tabId).then(response => {
+            // Strip the base64 prefix
+            const imageData = dataUrl.split(',')[1];
+
+            // Smart Dual-Prompt
+            const visionPrompt = `Look at the provided screenshot.
+If this is a programming/coding problem:
+Provide ONLY the raw solution code in the required programming language (Python by default). 
+Do not include any comments in the code.
+Do NOT include markdown code blocks or explanations.
+If this is a Multiple Choice Question (MCQ) or a non-coding text question:
+Respond EXACTLY in this format: 'MCQ: [The correct option or answer]'. Do NOT add any extra text or reasoning.`;
+
+            // We pass the imageData down through the queryRequest -> queryCustomAPI chain
+            queryRequest(visionPrompt, false, false, tabId, imageData).then(response => {
                 if (response && typeof response === 'string') {
-                    if (response.trim().startsWith('MCQ_ANSWER:')) {
-                        const mcqResult = response.trim().replace(/^MCQ_ANSWER:\s*/, '');
-                        showMCQToast(tabId, mcqResult);
+                    const cleaned = response.trim();
+                    
+                    if (cleaned.startsWith("MCQ:")) {
+                        // It's an MCQ -> Show in Toast/Roster using the standard MCQ toast
+                        const answer = cleaned.replace(/^MCQ:\s*/, '').trim();
+                        showMCQToast(tabId, `Answer: ${answer}`);
                     } else {
-                        const cleaned = response.trim()
+                        // It's Code -> Clean markdown and type it
+                        const finalCode = cleaned
                             .replace(/^```[a-zA-Z0-9]*\s*\n?/, '')
                             .replace(/\n?```\s*$/, '');
                         
@@ -1065,6 +1083,71 @@ Question:\n${clipText}`;
                                         return true;
                                     }
                                     return false;
+                                },
+                                args: [code],
+                                world: 'MAIN'
+                            }, (results) => {
+                                if (results && results[0] && !results[0].result) {
+                                    chrome.scripting.executeScript({
+                                        target: { tabId: tId },
+                                        files: ['data/inject/universalType.js']
+                                    }, () => {
+                                        chrome.scripting.executeScript({
+                                            target: { tabId: tId },
+                                            func: (c) => {
+                                                if (typeof window._neopassUniversalType === 'function') {
+                                                    window._neopassUniversalType(c || undefined);
+                                                }
+                                            },
+                                            args: [code],
+                                            world: 'MAIN'
+                                        });
+                                    });
+                                }
+                            });
+                        };
+                        invokeUT(tabId, finalCode);
+                    }
+                } else if (response && response.error) {
+                    handleQueryResponse(response, tabId);
+                }
+            }).catch(err => {
+                console.error('Vision AI error:', err);
+                showToast(tabId, 'Vision analysis failed. Ensure Custom API is configured.', true);
+            });
+        });
+    }
+
+    if (message.action === "universalPasteSolve" || message.action === "universalExtractSolve") {
+        const tabId = sender.tab.id;
+        const clipText = message.text;
+
+        if (clipText) {
+            const codingPrompt = `Instructions: You are tasked with solving a programming problem. Respond strictly with the solution code in the required programming language. 
+                        Ensure the code: Meets the requirements outlined in the problem statement.
+                        Stricly Passes all test cases, including edge cases and boundary conditions.
+                        Provide ONLY the solution code, no explanations or comments.
+                        Do not include any comments in the code.
+                        Always get the input from the users.
+                        If no programming language is specified, use Python by default.` +
+                `Question:\n${clipText}`;
+
+            queryRequest(codingPrompt, false, false, tabId).then(response => {
+                if (response && typeof response === 'string') {
+                    const cleaned = response.trim()
+                        .replace(/^```[a-zA-Z0-9]*\s*\n?/, '')
+                        .replace(/\n?```\s*$/, '');
+                    
+                    // Helper to invoke universalType
+                    const invokeUT = (tId, code) => {
+                        chrome.scripting.executeScript({
+                            target: { tabId: tId },
+                            func: (c) => {
+                                if (typeof window._neopassUniversalType === 'function') {
+                                    window._neopassUniversalType(c || undefined);
+                                    return true;
+                                }
+                                return false;
                             },
                             args: [code],
                             world: 'MAIN'
@@ -1089,7 +1172,6 @@ Question:\n${clipText}`;
                         });
                     };
                     invokeUT(tabId, cleaned);
-                    } // Added missing closing brace
                 } else if (response && response.error) {
                     handleQueryResponse(response, tabId);
                 }
@@ -1320,7 +1402,7 @@ function handleQueryResponseForIamNeoExamly(response, tabId, isMCQ = false, isHa
 // Returns either:
 // - String: successful response text
 // - Object: { error: string, errorType: string, detailedInfo: string }
-async function queryRequest(text, isMCQ = false, isMultipleChoice = false, tabId = null) {
+async function queryRequest(text, isMCQ = false, isMultipleChoice = false, tabId = null, imageData = null) {
     // Check if a request is already in progress
     if (!canMakeRequest()) {
         console.log('[Request Block] Request blocked - another request is in progress');
@@ -1339,9 +1421,19 @@ async function queryRequest(text, isMCQ = false, isMultipleChoice = false, tabId
         const customAPIConfig = await getCustomAPIConfig();
 
         if (customAPIConfig.useCustomAPI && customAPIConfig.apiKey) {
-            const result = await queryCustomAPI(text, isMCQ, isMultipleChoice, customAPIConfig);
+            const result = await queryCustomAPI(text, isMCQ, isMultipleChoice, customAPIConfig, imageData);
             unblockRequests();
             return result;
+        }
+
+        // If imageData is present and no custom API is configured, fail
+        if (imageData) {
+            unblockRequests();
+            return {
+                error: 'Vision OCR requires a Custom API key.',
+                errorType: 'config',
+                detailedInfo: 'Please configure Gemini or another Vision-capable API key in settings to use Alt+Shift+X.'
+            };
         }
 
         // Check if user is logged in
@@ -1537,12 +1629,12 @@ async function getCustomAPIConfig() {
 }
 
 // Function to query custom AI API
-async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
+async function queryCustomAPI(text, isMCQ, isMultipleChoice, config, imageData = null) {
     const { aiProvider, customEndpoint, apiKey, modelName } = config;
 
     // Construct the prompt based on query type
     let prompt = text;
-    if (isMCQ) {
+    if (isMCQ && !imageData) {
         if (isMultipleChoice) {
             prompt += "\nIMPORTANT: This is a MULTIPLE CHOICE question where MULTIPLE options can be correct. Analyze the question carefully and provide ALL correct options.\n\nFormat your response EXACTLY like this:\n- If options are A, B, C and A and C are correct: 'A. [text of option A], C. [text of option C]'\n- If options are 1, 2, 3 and 1 and 3 are correct: '1. [text of option 1], 3. [text of option 3]'\n- If only one option is correct, provide just that one: 'B. [text of option B]'\n\nDO NOT include explanations, reasoning, or anything else. ONLY the correct option(s) in the exact format shown above, separated by commas if multiple.\nIf this is not an MCQ question, simply respond with 'Not an MCQ'";
         } else {
@@ -1590,6 +1682,12 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                         messages: [{ role: 'user', content: prompt }],
                         temperature: 0.7
                     };
+                    if (imageData) {
+                        requestBody.messages[0].content = [
+                            { type: "text", text: prompt },
+                            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageData}` } }
+                        ];
+                    }
                     break;
 
                 case 'anthropic':
@@ -1604,6 +1702,12 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                         max_tokens: 4096,
                         messages: [{ role: 'user', content: prompt }]
                     };
+                    if (imageData) {
+                        requestBody.messages[0].content = [
+                            { type: "image", source: { type: "base64", media_type: "image/jpeg", data: imageData } },
+                            { type: "text", text: prompt }
+                        ];
+                    }
                     break;
 
                 case 'google':
@@ -1615,6 +1719,14 @@ async function queryCustomAPI(text, isMCQ, isMultipleChoice, config) {
                     requestBody = {
                         contents: [{ parts: [{ text: prompt }] }]
                     };
+                    if (imageData) {
+                        requestBody.contents[0].parts.push({
+                            inlineData: {
+                                mimeType: "image/jpeg",
+                                data: imageData
+                            }
+                        });
+                    }
                     break;
 
                 case 'deepseek':
