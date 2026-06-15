@@ -1000,22 +1000,23 @@ chrome.commands.onCommand.addListener((command, tab) => {
             if (selectedText) {
                 // Text selected → query AI with same coding prompt as Alt+Shift+T
 
-                const codingPrompt = `Instructions: You are tasked with solving a programming problem. Respond strictly with the solution code in the required programming language. 
-                            Ensure the code: Meets the requirements outlined in the problem statement.
-                            Stricly Passes all test cases, including edge cases and boundary conditions.
-                            Provide ONLY the solution code, no explanations or comments.
-                            Do not include any comments in the code.
-                            Always get the input from the users.
-                            If no programming language is specified, use Python by default.` +
-                    `Question:\n${selectedText}`;
+                const codingPrompt = `Instructions: Determine if this is a programming problem or a Multiple Choice Question (MCQ).
+1. If it is a programming problem: Respond strictly with ONLY the raw solution code in the required language (Python by default). Do NOT use markdown formatting, do NOT wrap the code in backticks, and do NOT include any comments or explanations.
+2. If it is an MCQ: Respond strictly starting with "MCQ_ANSWER: " followed by the correct option(s). Do not explain.
+Question:\n${selectedText}`;
 
                 queryRequest(codingPrompt, false, false, tab.id).then(response => {
                     if (response && typeof response === 'string') {
-                        // Strip markdown code fences
-                        const cleaned = response.trim()
-                            .replace(/^```[a-zA-Z0-9]*\s*\n?/, '')
-                            .replace(/\n?```\s*$/, '');
-                        invokeUT(tab.id, cleaned);
+                        if (response.trim().startsWith('MCQ_ANSWER:')) {
+                            const mcqResult = response.trim().replace(/^MCQ_ANSWER:\s*/, '');
+                            showMCQToast(tab.id, mcqResult);
+                        } else {
+                            // Strip markdown code fences just in case
+                            const cleaned = response.trim()
+                                .replace(/^```[a-zA-Z0-9]*\s*\n?/, '')
+                                .replace(/\n?```\s*$/, '');
+                            invokeUT(tab.id, cleaned);
+                        }
                     } else if (response && response.error) {
                         handleQueryResponse(response, tab.id);
                         shortcutStates[command] = false;
@@ -1039,31 +1040,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const clipText = message.text;
 
         if (clipText) {
-            const codingPrompt = `Instructions: You are tasked with solving a programming problem. Respond strictly with the solution code in the required programming language. 
-                        Ensure the code: Meets the requirements outlined in the problem statement.
-                        Stricly Passes all test cases, including edge cases and boundary conditions.
-                        Provide ONLY the solution code, no explanations or comments.
-                        Do not include any comments in the code.
-                        Always get the input from the users.
-                        If no programming language is specified, use Python by default.` +
-                `Question:\n${clipText}`;
+            const codingPrompt = `Instructions: Determine if this is a programming problem or a Multiple Choice Question (MCQ).
+1. If it is a programming problem: Respond strictly with ONLY the raw solution code in the required language (Python by default). Do NOT use markdown formatting, do NOT wrap the code in backticks, and do NOT include any comments or explanations.
+2. If it is an MCQ: Respond strictly starting with "MCQ_ANSWER: " followed by the correct option(s). Do not explain.
+Question:\n${clipText}`;
 
             queryRequest(codingPrompt, false, false, tabId).then(response => {
                 if (response && typeof response === 'string') {
-                    const cleaned = response.trim()
-                        .replace(/^```[a-zA-Z0-9]*\s*\n?/, '')
-                        .replace(/\n?```\s*$/, '');
-                    
-                    // Helper to invoke universalType
-                    const invokeUT = (tId, code) => {
-                        chrome.scripting.executeScript({
-                            target: { tabId: tId },
-                            func: (c) => {
-                                if (typeof window._neopassUniversalType === 'function') {
-                                    window._neopassUniversalType(c || undefined);
-                                    return true;
-                                }
-                                return false;
+                    if (response.trim().startsWith('MCQ_ANSWER:')) {
+                        const mcqResult = response.trim().replace(/^MCQ_ANSWER:\s*/, '');
+                        showMCQToast(tabId, mcqResult);
+                    } else {
+                        const cleaned = response.trim()
+                            .replace(/^```[a-zA-Z0-9]*\s*\n?/, '')
+                            .replace(/\n?```\s*$/, '');
+                        
+                        // Helper to invoke universalType
+                        const invokeUT = (tId, code) => {
+                            chrome.scripting.executeScript({
+                                target: { tabId: tId },
+                                func: (c) => {
+                                    if (typeof window._neopassUniversalType === 'function') {
+                                        window._neopassUniversalType(c || undefined);
+                                        return true;
+                                    }
+                                    return false;
                             },
                             args: [code],
                             world: 'MAIN'
@@ -1088,6 +1089,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         });
                     };
                     invokeUT(tabId, cleaned);
+                    } // Added missing closing brace
                 } else if (response && response.error) {
                     handleQueryResponse(response, tabId);
                 }
