@@ -357,7 +357,7 @@
 
     // ── Entry Point ─────────────────────────────────────────────────────
 
-    async function performUniversalType() {
+    async function performUniversalType(providedText) {
         console.log('[UniversalType] Triggered');
 
         // If already typing, stop it
@@ -368,22 +368,24 @@
             return;
         }
 
-        // 1. Read clipboard
-        let clipText = '';
-        let clipboardSource = 'none';
+        // 1. Use provided text or read clipboard
+        let clipText = providedText || '';
+        let clipboardSource = providedText ? 'provided' : 'none';
 
-        try {
-            clipText = await navigator.clipboard.readText();
-            clipboardSource = 'native';
-            console.log('[UniversalType] Clipboard source: native, length:', clipText.length);
-        } catch (err) {
-            console.log('[UniversalType] Native clipboard read failed:', err.message);
-        }
+        if (!clipText) {
+            try {
+                clipText = await navigator.clipboard.readText();
+                clipboardSource = 'native';
+                console.log('[UniversalType] Clipboard source: native, length:', clipText.length);
+            } catch (err) {
+                console.log('[UniversalType] Native clipboard read failed:', err.message);
+            }
 
-        if (!clipText && window.neoPassClipboard) {
-            clipText = window.neoPassClipboard;
-            clipboardSource = 'neoPassClipboard';
-            console.log('[UniversalType] Clipboard source: neoPassClipboard, length:', clipText.length);
+            if (!clipText && window.neoPassClipboard) {
+                clipText = window.neoPassClipboard;
+                clipboardSource = 'neoPassClipboard';
+                console.log('[UniversalType] Clipboard source: neoPassClipboard, length:', clipText.length);
+            }
         }
 
         if (!clipText) {
@@ -446,6 +448,10 @@
         if (modifierKey && event.shiftKey && event.code === 'KeyU') {
             event.preventDefault();
             event.stopPropagation();
+            // If text is selected, let worker.js handle AI query
+            const selectedText = window.getSelection().toString().trim();
+            if (selectedText) return;
+            // No text selected → clipboard typing
             performUniversalType();
         }
     }, true);

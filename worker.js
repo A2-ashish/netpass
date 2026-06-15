@@ -919,42 +919,90 @@ chrome.commands.onCommand.addListener((command, tab) => {
     }
 
     if (command === 'universalType') {
+        // Helper to invoke universalType with optional code
+        const invokeUT = (tabId, code) => {
+            chrome.scripting.executeScript({
+                target: { tabId: tabId },
+                func: (c) => {
+                    if (typeof window._neopassUniversalType === 'function') {
+                        window._neopassUniversalType(c || undefined);
+                        return true;
+                    }
+                    return false;
+                },
+                args: [code],
+                world: 'MAIN'
+            }, (results) => {
+                if (chrome.runtime.lastError) {
+                    showToast(tabId, 'Universal Type failed. Please try again.', true);
+                    shortcutStates[command] = false;
+                    return;
+                }
+                if (results && results[0] && !results[0].result) {
+                    chrome.scripting.executeScript({
+                        target: { tabId: tabId },
+                        files: ['data/inject/universalType.js']
+                    }, () => {
+                        chrome.scripting.executeScript({
+                            target: { tabId: tabId },
+                            func: (c) => {
+                                if (typeof window._neopassUniversalType === 'function') {
+                                    window._neopassUniversalType(c || undefined);
+                                    return true;
+                                }
+                                return false;
+                            },
+                            args: [code],
+                            world: 'MAIN'
+                        });
+                    });
+                }
+                shortcutStates[command] = false;
+            });
+        };
+
+        // Check if user has text selected on the page
         chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            func: () => {
-                if (typeof window._neopassUniversalType === 'function') {
-                    window._neopassUniversalType();
-                    return true;
-                }
-                return false;
-            },
-            world: 'MAIN'
-        }, (results) => {
+            func: () => window.getSelection().toString().trim()
+        }, (selResults) => {
             if (chrome.runtime.lastError) {
-                showToast(tab.id, 'Universal Type failed. Please try again.', true);
-                shortcutStates[command] = false;
+                invokeUT(tab.id, null);
                 return;
             }
-            if (results && results[0] && !results[0].result) {
-                // Script not loaded yet — inject it first
-                chrome.scripting.executeScript({
-                    target: { tabId: tab.id },
-                    files: ['data/inject/universalType.js']
-                }, () => {
-                    chrome.scripting.executeScript({
-                        target: { tabId: tab.id },
-                        func: () => {
-                            if (typeof window._neopassUniversalType === 'function') {
-                                window._neopassUniversalType();
-                                return true;
-                            }
-                            return false;
-                        },
-                        world: 'MAIN'
-                    });
+            const selectedText = selResults && selResults[0] ? selResults[0].result : '';
+
+            if (selectedText) {
+                // Text selected → query AI with same coding prompt as Alt+Shift+T
+
+                const codingPrompt = `Instructions: You are tasked with solving a programming problem. Respond strictly with the solution code in the required programming language. 
+                            Ensure the code: Meets the requirements outlined in the problem statement.
+                            Stricly Passes all test cases, including edge cases and boundary conditions.
+                            Provide ONLY the solution code, no explanations or comments.
+                            Always get the input from the users.
+                            If no programming language is specified, use Python by default.` +
+                            `Question:\n${selectedText}`;
+
+                queryRequest(codingPrompt, false, false, tab.id).then(response => {
+                    if (response && typeof response === 'string') {
+                        // Strip markdown code fences
+                        const cleaned = response.trim()
+                            .replace(/^```[a-zA-Z0-9]*\s*\n?/, '')
+                            .replace(/\n?```\s*$/, '');
+                        invokeUT(tab.id, cleaned);
+                    } else if (response && response.error) {
+                        handleQueryResponse(response, tab.id);
+                        shortcutStates[command] = false;
+                    }
+                }).catch(err => {
+                    console.error('Universal Type AI error:', err);
+                    showToast(tab.id, 'Search failed. Please try again.', true);
+                    shortcutStates[command] = false;
                 });
+            } else {
+                // No text selected → original clipboard typing behavior
+                invokeUT(tab.id, null);
             }
-            shortcutStates[command] = false;
         });
     }
 });
