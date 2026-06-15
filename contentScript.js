@@ -204,3 +204,74 @@ document.addEventListener('keydown', async function(event) {
     }
 }, true);
 
+// Universal DOM Scraper Helper
+function extractUniversalQuestion() {
+    // 1. Try known platform selectors for perfect accuracy
+    const leetcode = document.querySelector('[data-track-load="description_content"]');
+    if (leetcode) return leetcode.innerText.trim();
+
+    const hackerrank = document.querySelector('.challenge-body-html');
+    if (hackerrank) return hackerrank.innerText.trim();
+
+    const codeforces = document.querySelector('.problem-statement');
+    if (codeforces) return codeforces.innerText.trim();
+
+    // 2. Generic heuristic fallback
+    let textNodes = [];
+    // Grab all standard text-heavy elements
+    const elements = document.querySelectorAll('p, li, pre, code, h1, h2, h3, h4');
+    
+    for (let el of elements) {
+        // Skip if inside an editor, header, footer, or navigation
+        if (el.closest('.monaco-editor, .ace_editor, .CodeMirror, header, footer, nav, aside, [role="navigation"]')) {
+            continue;
+        }
+        // Skip if element is hidden
+        if (el.offsetParent === null) continue;
+        
+        const text = el.innerText ? el.innerText.trim() : el.textContent.trim();
+        if (text.length > 0) {
+            textNodes.push(text);
+        }
+    }
+    
+    // Deduplicate (some elements might be nested, e.g., <code> inside <p>)
+    // A simple deduplication is to just join them, the AI can handle slight repetition
+    // But let's avoid exact duplicates
+    const uniqueText = [...new Set(textNodes)];
+    let finalText = uniqueText.join('\n\n');
+    
+    // Limit to 15,000 characters to prevent overwhelming the AI or hitting token limits
+    return finalText.substring(0, 15000);
+}
+
+// Listen for Alt+Shift+E to trigger Universal Scrape & Solve
+document.addEventListener('keydown', function(event) {
+    const modifierKey = window.isMac ? event.ctrlKey : event.altKey;
+    if (modifierKey && event.shiftKey && event.code === 'KeyE') {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const scrapedText = extractUniversalQuestion();
+        
+        if (scrapedText && scrapedText.length > 10) {
+            chrome.runtime.sendMessage({
+                action: "universalExtractSolve",
+                text: scrapedText
+            });
+            // Show a toast that scraping was successful
+            chrome.runtime.sendMessage({
+                action: "showToast",
+                message: "Question scraped. Solving...",
+                isError: false
+            });
+        } else {
+            chrome.runtime.sendMessage({
+                action: "showToast",
+                message: "Could not find a question on this page.",
+                isError: true
+            });
+        }
+    }
+}, true);
+

@@ -1034,7 +1034,7 @@ chrome.commands.onCommand.addListener((command, tab) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === "universalPasteSolve") {
+    if (message.action === "universalPasteSolve" || message.action === "universalExtractSolve") {
         const tabId = sender.tab.id;
         const clipText = message.text;
 
