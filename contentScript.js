@@ -259,18 +259,6 @@ document.addEventListener('keydown', function(event) {
                 action: "universalExtractSolve",
                 text: scrapedText
             });
-            // Show a toast that scraping was successful
-            chrome.runtime.sendMessage({
-                action: "showToast",
-                message: "Question scraped. Solving...",
-                isError: false
-            });
-        } else {
-            chrome.runtime.sendMessage({
-                action: "showToast",
-                message: "Could not find a question on this page.",
-                isError: true
-            });
         }
     }
 }, true);
