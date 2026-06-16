@@ -327,25 +327,25 @@
                 break;
             }
 
-            // Realistic typing delays
-            const letterDelay = Math.random() * 150 + 50; // 50-200ms
+            // Realistic typing delays (Fast coder speed)
+            const letterDelay = Math.random() * 40 + 20; // 20-60ms
             await new Promise(resolve => setTimeout(resolve, letterDelay));
 
             // Extra delay after spaces (end of word)
             if (char === ' ') {
-                const wordDelay = Math.random() * 500 + 300; // 300-800ms
+                const wordDelay = Math.random() * 50 + 50; // 50-100ms
                 await new Promise(resolve => setTimeout(resolve, wordDelay));
             }
 
-            // Extra delay after sentence-ending punctuation
-            if (char === '.' || char === '!' || char === '?') {
-                const sentenceDelay = Math.random() * 500 + 500; // 500-1000ms
+            // Extra delay after sentence-ending punctuation or newlines
+            if (char === '.' || char === '!' || char === '?' || char === '\n') {
+                const sentenceDelay = Math.random() * 100 + 100; // 100-200ms
                 await new Promise(resolve => setTimeout(resolve, sentenceDelay));
             }
 
             // Shorter delay after opening braces/brackets (code context)
             if (char === '{' || char === '(' || char === '[') {
-                const braceDelay = Math.random() * 100 + 50; // 50-150ms
+                const braceDelay = Math.random() * 20 + 10; // 10-30ms
                 await new Promise(resolve => setTimeout(resolve, braceDelay));
             }
         }

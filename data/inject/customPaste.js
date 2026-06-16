@@ -94,19 +94,19 @@ async function performPasteByTyping() {
                 data: char
             }));
             
-            // Random delay between 50-200ms for each letter (realistic typing speed)
-            const letterDelay = Math.random() * 150 + 50; // Random between 50-200ms
+            // Random delay for each letter (Fast coder typing speed)
+            const letterDelay = Math.random() * 40 + 20; // Random between 20-60ms
             await new Promise(resolve => setTimeout(resolve, letterDelay));
             
             // Add extra delay after space (end of word)
             if (char === ' ') {
-                const wordDelay = Math.random() * 500 + 300; // Random between 300-800ms
+                const wordDelay = Math.random() * 50 + 50; // Random between 50-100ms
                 await new Promise(resolve => setTimeout(resolve, wordDelay));
             }
             
-            // Add extra delay after sentence-ending punctuation
-            if (char === '.' || char === '!' || char === '?') {
-                const sentenceDelay = Math.random() * 500 + 500; // Random between 500-1000ms
+            // Add extra delay after sentence-ending punctuation or newlines
+            if (char === '.' || char === '!' || char === '?' || char === '\n') {
+                const sentenceDelay = Math.random() * 100 + 100; // Random between 100-200ms
                 await new Promise(resolve => setTimeout(resolve, sentenceDelay));
             }
         }
